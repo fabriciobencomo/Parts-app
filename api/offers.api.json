@@ -1,0 +1,20 @@
+{
+  "offers": [
+    {
+      "id": 1,
+      "title": "Summer Sale",
+      "description": "Get 50% off on all summer items!",
+      "imageUrl": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162373/viparts/banner1_ct7pta.jpg",
+      "link": "https://example.com/summer-sale",
+      "validUntil": "2023-08-31"
+    },
+    {
+      "id": 2,
+      "title": "Winter Clearance",
+      "description": "Up to 70% off on winter clearance items!",
+      "imageUrl": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162608/viparts/banner2_jy9g22.jpg",
+      "link": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162608/viparts/banner2_jy9g22.jpg",
+      "validUntil": "2023-12-31"
+    }
+  ]
+}

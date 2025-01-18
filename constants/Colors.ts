@@ -8,6 +8,7 @@ const tintColorDark = '#fff';
 
 export const Colors = {
   light: {
+    primary: '#FF6600',
     text: '#FF6600',
     background: '#fff',
     tint: tintColorLight,
@@ -16,6 +17,7 @@ export const Colors = {
     tabIconSelected: tintColorLight,
   },
   dark: {
+    primary: '#FF6600',
     text: '#ECEDEE',
     background: '#4C5B5C',
     tint: tintColorDark,

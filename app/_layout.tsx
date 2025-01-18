@@ -7,14 +7,27 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const backgroundColor = useThemeColor({}, 'background')
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SFUITextBold: require('../assets/fonts/SFUIText-Bold.ttf'),
+    SFUITextBoldItalic: require('../assets/fonts/SFUIText-BoldItalic.ttf'),
+    SFUITextHeavy: require('../assets/fonts/SFUIText-Heavy.ttf'),
+    SFUITextHeavyItalic: require('../assets/fonts/SFUIText-HeavyItalic.ttf'),
+    SFUITextLight: require('../assets/fonts/SFUIText-Light.ttf'),
+    SFUITextLightItalic: require('../assets/fonts/SFUIText-LightItalic.ttf'),
+    SFUITextMedium: require('../assets/fonts/SFUIText-Medium.ttf'),
+    SFUITextMediumItalic: require('../assets/fonts/SFUIText-MediumItalic.ttf'),
+    SFUITextRegular: require('../assets/fonts/SFUIText-Regular.ttf'),
+    SFUITextRegularItalic: require('../assets/fonts/SFUIText-RegularItalic.ttf'),
+    SFUITextSemibold: require('../assets/fonts/SFUIText-Semibold.ttf'),
+    SFUITextSemiboldItalic: require('../assets/fonts/SFUIText-SemiboldItalic.ttf')
   });
 
   useEffect(() => {
@@ -28,7 +41,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* <Stack.Screen name="/" options={{ headerShown: false }} /> */}
       </Stack>

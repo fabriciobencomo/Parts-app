@@ -1,0 +1,49 @@
+{
+  "autoParts": [
+    {
+      "id": 1,
+      "name": "Aceite Motorcraft Full Sintetico 0W-20 ",
+      "category": "Brakes",
+      "price": 29.99,
+      "manufacturer": "ACME Brakes",
+      "stock": 150,
+      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product1_y7zu3b.png"
+    },
+    {
+      "id": 2,
+      "name": "Empacadura Camara Optra Desing 2004-20",
+      "category": "Engine",
+      "price": 9.99,
+      "manufacturer": "FilterPro",
+      "stock": 300,
+      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product2_kbeeri.png"
+    },
+    {
+      "id": 3,
+      "name": "Tapa Reservorio Ewig Fiesta 1.6",
+      "category": "Engine",
+      "price": 14.99,
+      "manufacturer": "FilterPro",
+      "stock": 200,
+      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product3_muwnib.png"
+    },
+    {
+      "id": 4,
+      "name": "Headlight Bulb",
+      "category": "Lighting",
+      "price": 19.99,
+      "manufacturer": "BrightLights",
+      "stock": 100,
+      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"
+    },
+    {
+      "id": 5,
+      "name": "Spark Plug",
+      "category": "Ignition",
+      "price": 4.99,
+      "manufacturer": "SparkCo",
+      "stock": 500,
+      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"
+    }
+  ]
+}
