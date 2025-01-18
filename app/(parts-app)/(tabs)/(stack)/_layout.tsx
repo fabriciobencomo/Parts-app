@@ -1,3 +1,4 @@
+
 import { View, Text } from 'react-native'
 import React from 'react'
 import { Redirect, Stack } from 'expo-router'
@@ -5,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/presentation/shared/components/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { ThemedView } from '@/presentation/shared/components/ThemedView';
-import HomeScreen from './(home)';
+import HomeScreen from './home';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const LayoutScreen = () => {
@@ -18,13 +19,11 @@ const LayoutScreen = () => {
   }
 
   return (
-    <GestureHandlerRootView>
-      <Stack screenOptions={{headerSearchBarOptions:{ barTintColor: '#fff', tintColor:'#000', headerIconColor: '#000', cancelButtonText:'X', placeholder: 'Buscar Respuestos', hintTextColor:"#ddd", textColor:'#000'} , headerLeft: HeaderLeft, headerTitle: '' , headerStyle: {backgroundColor: backgroundColor} }}>
-        <Stack.Screen name="(home)/index" options={{
+      <Stack screenOptions={{headerSearchBarOptions:{ barTintColor: '#fff', tintColor:'#000', headerIconColor: '#000', cancelButtonText:'Cancelar', placeholder: 'Buscar Respuestos', hintTextColor:"#ddd", textColor:'#000'} , headerLeft: HeaderLeft, headerTitle: '' , headerStyle: {backgroundColor: backgroundColor} }}>
+        <Stack.Screen name="/(home)/index" options={{
           title: 'Inicio',
         }} />
       </Stack>
-    </GestureHandlerRootView>
   )
 }
 
@@ -35,7 +34,6 @@ export default LayoutScreen
 const HeaderLeft = () => {
   return (
     <ThemedView style={{backgroundColor: 'transparent', flexDirection: 'row', alignItems: 'center', margin: 10, marginBottom:20, gap:10}} >
-      <Ionicons name='menu' size={25} style={{color: '#fff'}}/>
       <ThemedText style={{fontWeight: 700, color:'#fff' }}>Hola, Ricardo</ThemedText>
     </ThemedView>
   )

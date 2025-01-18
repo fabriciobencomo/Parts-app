@@ -19,10 +19,10 @@ const HomeScreen = () => {
   
 
   return (
-      <ScrollView className='mt-2 pb-10' style={{paddingTop: safeArea.top *3.2}}>
-        <MainSlideShow banners={offers}/>
-        <PartsHorizontal parts={autoParts} title='Ofertas de La Semana'/>
-      </ScrollView>
+    <ScrollView className='mt-2 pb-10' style={{paddingTop: safeArea.top *2.5}}>
+      <MainSlideShow banners={offers}/>
+      <PartsHorizontal parts={autoParts} title='Ofertas de La Semana'/>
+  </ScrollView>
   )
 }
 
