@@ -4,15 +4,19 @@ import { ThemedView } from '@/presentation/shared/components/ThemedView'
 import { AutoPart } from '@/core/interfaces/parts.interface'
 import { ThemedText } from '@/presentation/shared/components/ThemedText'
 import { Pressable } from 'react-native-gesture-handler'
+import { router } from 'expo-router'
 
 interface Props {
+  id: number
   image: string;
   name: string;
 }
 
-const PartCard = ({image, name}) => {
+const PartCard = ({image, name, id}: Props) => {
+
+
   return (
-    <Pressable>  
+    <Pressable onPress={() => router.push(`/(stack)/part/${id}`)}>  
       <ThemedView style={styles.ThemedView}>
         <Image source={{uri: image}} style={{height:140, width: 140}}/>
         <Text style={styles.text} numberOfLines={3}>{name}</Text>

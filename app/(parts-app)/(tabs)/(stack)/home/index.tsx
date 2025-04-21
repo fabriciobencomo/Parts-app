@@ -1,10 +1,11 @@
 import { View, Text, KeyboardAvoidingView, ScrollView } from 'react-native'
 import React, { useEffect } from 'react'
 import MainSlideShow from '@/presentation/items/parts/MainSlideShow'
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useParts } from '@/hooks/parts/useParts';
 import PartsHorizontal from '@/presentation/items/parts/PartsHorizontal';
 import { useBanners } from '@/hooks/parts/useBanners';
+import SearchComponent from '@/presentation/shared/components/SearchComponent';
 
 const HomeScreen = () => {
 
@@ -19,10 +20,13 @@ const HomeScreen = () => {
   
 
   return (
-    <ScrollView className='mt-2 pb-10' style={{paddingTop: safeArea.top *2.5}}>
-      <MainSlideShow banners={offers}/>
-      <PartsHorizontal parts={autoParts} title='Ofertas de La Semana'/>
-  </ScrollView>
+    <ScrollView style={{paddingTop: 0, backgroundColor: 'white'}}>
+        <SearchComponent />
+          <MainSlideShow banners={offers}/>
+          <PartsHorizontal parts={autoParts} title='Ofertas de La Semana'/>
+          <View style={{height: 20}}/>
+          <PartsHorizontal parts={autoParts} title='Lo Mas Vendido'/>
+      </ScrollView>
   )
 }
 

@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider, useTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,7 +15,6 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const backgroundColor = useThemeColor({}, 'background')
   const [loaded] = useFonts({
     SFUITextBold: require('../assets/fonts/SFUIText-Bold.ttf'),
     SFUITextBoldItalic: require('../assets/fonts/SFUIText-BoldItalic.ttf'),

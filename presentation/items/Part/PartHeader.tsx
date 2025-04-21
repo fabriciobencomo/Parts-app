@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const FavoritesScreen = () => {
+const PartHeader = () => {
   return (
     <View>
-      <Text>FavoritesScreen</Text>
+      <Text>PartHeader</Text>
     </View>
   )
 }
 
-export default FavoritesScreen
+export default PartHeader
