@@ -11,10 +11,10 @@ const HomeScreen = () => {
   const { offers } = useBanners();
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 22 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Banner/Slideshow with rounded corners */}
@@ -46,7 +46,7 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   bannerContainer: {
-    marginTop: -32,
+    marginTop: -2,
     paddingHorizontal: 16,
     zIndex: 2,
   },
@@ -60,11 +60,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#001845',
-    marginTop: 28,
-    marginBottom: 12,
-    marginLeft: 16,
+    marginTop: 18,
+    marginBottom: 14,
+    marginLeft: 24,
   },
 });

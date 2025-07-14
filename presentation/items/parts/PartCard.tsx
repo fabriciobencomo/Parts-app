@@ -2,7 +2,6 @@ import { View, Text, Image, StyleSheet } from 'react-native'
 import React from 'react'
 import { ThemedView } from '@/presentation/shared/components/ThemedView'
 import { AutoPart } from '@/core/interfaces/parts.interface'
-import { ThemedText } from '@/presentation/shared/components/ThemedText'
 import { Pressable } from 'react-native-gesture-handler'
 import { router } from 'expo-router'
 
@@ -12,11 +11,12 @@ interface Props {
 
 const PartCard = ({ part }: Props) => {
   return (
-    <Pressable onPress={() => router.push(`/part/${part.id}`)}>  
-      <ThemedView style={styles.ThemedView}>
-        <Image source={{uri: part.image[0]}} style={{height:140, width: 140}}/>
-        <Text style={styles.text} numberOfLines={3}>{part.name}</Text>
-      </ThemedView>
+    <Pressable onPress={() => router.push(`/part/${part.id}`)}>
+      <View style={styles.card}>
+        <Image source={{ uri: part.image[0] }} style={styles.image} />
+        <Text style={styles.name} numberOfLines={2}>{part.name}</Text>
+        <Text style={styles.price}>${part.price % 1 === 0 ? part.price : part.price.toFixed(2)}</Text>
+      </View>
     </Pressable>
   )
 }
@@ -24,27 +24,40 @@ const PartCard = ({ part }: Props) => {
 export default PartCard
 
 const styles = StyleSheet.create({
-  ThemedView: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 10,
-    borderWidth: 0.5,
-    borderRadius: 10,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
     marginHorizontal: 10,
-    borderColor: "#ddd",
     marginTop: 10,
-    paddingBottom: 20,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems : 'center',
-    justifyContent: 'center',
+    padding: 12,
+    alignItems: 'center',
     width: 150,
-    height: 200,
-    textOverflow: 'ellipsis',
-    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
-
-  text: {
+  image: {
+    width: 90,
+    height: 90,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#F4F4F4',
+  },
+  name: {
     fontWeight: '500',
-    textAlign: 'center'
-  }
-})
+    fontSize: 15,
+    color: '#001845',
+    textAlign: 'center',
+    marginBottom: 6,
+    minHeight: 38,
+  },
+  price: {
+    fontWeight: '700',
+    fontSize: 16,
+    color: '#1976D2',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+});

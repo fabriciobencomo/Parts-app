@@ -5,6 +5,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { configureReanimatedLogger } from 'react-native-reanimated';
+
+// Desactivar modo estricto de Reanimated
+configureReanimatedLogger({ strict: false });
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';

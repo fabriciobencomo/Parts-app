@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
   },
   greeting: {
     color: 'white',
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     marginTop: 8,
   },
   searchBarWrapper: {
