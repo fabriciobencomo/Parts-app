@@ -71,27 +71,50 @@ export default function TabLayout() {
     <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
       {/* Header global solo si NO estamos en la página de producto NI en la de resultados de búsqueda */}
       {!isProductPage && !isSearchResultsPage && (
-        <LinearGradient
-          colors={["#0A2E73", "#1976D2"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.header, { paddingTop: safeArea.top + 16 }]}
-        >
-          {/* Saludo solo en el tab de inicio */}
-          {isHomeTab && <Text style={styles.greeting}>Hola Ricardo</Text>}
-          <View style={styles.searchBarWrapper}>
-            <SearchComponent
-              value={search}
-              onChangeText={text => {
-                setSearch(text);
-                setShowResults(true);
-              }}
-              results={[]}
-              onResultPress={() => {}}
-              onFocus={() => setOverlayVisible(true)}
-            />
+        isHomeTab ? (
+          <LinearGradient
+            colors={["#0A2E73", "#1976D2"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.header,
+              { paddingTop: safeArea.top + 16 },
+              { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }
+            ]}
+          >
+            {/* Saludo solo en el tab de inicio */}
+            <Text style={styles.greeting}>Hola Ricardo</Text>
+            <View style={styles.searchBarWrapper}>
+              <SearchComponent
+                value={search}
+                onChangeText={text => {
+                  setSearch(text);
+                  setShowResults(true);
+                }}
+                results={[]}
+                onResultPress={() => {}}
+                onFocus={() => setOverlayVisible(true)}
+                rounded={true}
+              />
+            </View>
+          </LinearGradient>
+        ) : (
+          <View style={{ backgroundColor: '#001233', paddingTop: safeArea.top + 16, paddingHorizontal: 20, paddingBottom: 18 }}>
+            <View style={styles.searchBarWrapper}>
+              <SearchComponent
+                value={search}
+                onChangeText={text => {
+                  setSearch(text);
+                  setShowResults(true);
+                }}
+                results={[]}
+                onResultPress={() => {}}
+                onFocus={() => setOverlayVisible(true)}
+                rounded={false}
+              />
+            </View>
           </View>
-        </LinearGradient>
+        )
       )}
       {/* Overlay de búsqueda avanzado */}
       <SearchOverlay

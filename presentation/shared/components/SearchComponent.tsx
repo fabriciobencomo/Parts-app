@@ -15,9 +15,10 @@ interface Props {
   results: Part[];
   onResultPress?: (part: Part) => void;
   onFocus?: () => void;
+  rounded?: boolean;
 }
 
-const SearchComponent: React.FC<Props> = ({ value, onChangeText, results, onResultPress, onFocus }) => {
+const SearchComponent: React.FC<Props> = ({ value, onChangeText, results, onResultPress, onFocus, rounded = false }) => {
   const router = useRouter();
 
   const handleSubmit = () => {
@@ -31,7 +32,7 @@ const SearchComponent: React.FC<Props> = ({ value, onChangeText, results, onResu
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, rounded ? styles.rounded : styles.rectangular]}>
         <Ionicons name="search" size={20} color="#7D8597" style={styles.icon} />
         <TextInput
           style={styles.input}
@@ -71,7 +72,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 8,
     shadowColor: '#000',
@@ -79,6 +79,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
+  },
+  rounded: {
+    borderRadius: 16,
+  },
+  rectangular: {
+    borderRadius: 0,
   },
   icon: {
     marginRight: 8,
