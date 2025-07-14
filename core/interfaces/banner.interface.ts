@@ -8,5 +8,5 @@ export interface Offer {
   description: string;
   imageUrl:    string;
   link:        string;
-  validUntil:  Date;
+  validUntil:  string;
 }

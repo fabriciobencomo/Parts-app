@@ -9,5 +9,5 @@ export interface AutoPart {
   price:        number;
   manufacturer: string;
   stock:        number;
-  image:        string;
+  image:        string[];
 }

@@ -1,58 +1,125 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import iconSet from '@expo/vector-icons/build/Fontisto';
+import React from 'react';
+import { View, TextInput, StyleSheet, FlatList, Text, Image, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
-import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, useColorScheme } from 'react-native';
+import { useRouter } from 'expo-router';
 
+interface Part {
+  id: number;
+  name: string;
+  image: string[];
+}
 
-const SearchComponent = () => {
-  const [searchText, setSearchText] = useState('');
-  
-  const backgroundColor = useThemeColor({} , 'primary')
+interface Props {
+  value: string;
+  onChangeText: (text: string) => void;
+  results: Part[];
+  onResultPress?: (part: Part) => void;
+  onFocus?: () => void;
+}
 
+const SearchComponent: React.FC<Props> = ({ value, onChangeText, results, onResultPress, onFocus }) => {
+  const router = useRouter();
 
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    // Add your search logic here
+  const handleSubmit = () => {
+    if (value.trim()) {
+      router.push({
+        pathname: '/search-results',
+        params: { query: value.trim() }
+      });
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.wrapper}>
       <View style={styles.inputContainer}>
-        <Ionicons name="search" size={20} color="#000" style={styles.icon} />
+        <Ionicons name="search" size={20} color="#7D8597" style={styles.icon} />
         <TextInput
           style={styles.input}
-          placeholder="Search..."
+          placeholder="Buscar..."
+          value={value}
+          onChangeText={onChangeText}
+          placeholderTextColor="#7D8597"
+          onFocus={onFocus}
+          onSubmitEditing={handleSubmit}
+          returnKeyType="search"
         />
       </View>
+      {results.length > 0 && (
+        <View style={styles.dropdown}>
+          <FlatList
+            data={results}
+            keyExtractor={item => item.id.toString()}
+            renderItem={({ item }) => (
+              <Pressable style={styles.resultItem} onPress={() => onResultPress && onResultPress(item)}>
+                <Image source={{ uri: item.image[0] }} style={styles.resultImage} />
+                <Text style={styles.resultText}>{item.name}</Text>
+              </Pressable>
+            )}
+          />
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#001845',
-    paddingHorizontal: 20,
-    paddingVertical: 20
+  wrapper: {
+    width: '100%',
+    zIndex: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   icon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    height: 40,
+    fontSize: 16,
+    color: '#001845',
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+  },
+  dropdown: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    maxHeight: 200,
+  },
+  resultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  resultImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#F4F4F4',
+  },
+  resultText: {
+    fontSize: 15,
+    color: '#001845',
+    flex: 1,
   },
 });
 

@@ -39,7 +39,7 @@ const PartsHorizontal = ({parts: parts, title, loadNextPage}: Props) => {
   return (
     <View>
       <Text style={styles.title}>{title}</Text>
-      <FlatList showsHorizontalScrollIndicator={false} keyExtractor={(item, i) => `${item.id}-${i}`} horizontal data={parts} renderItem={({item}) => <PartCard id={item.id} image={item.image} name={item.name}/>} onScroll={onScroll}/>
+      <FlatList showsHorizontalScrollIndicator={false} keyExtractor={(item, i) => `${item.id}-${i}`} horizontal data={parts} renderItem={({item}) => <PartCard part={item}/>} onScroll={onScroll}/>
     </View>
   )
 }

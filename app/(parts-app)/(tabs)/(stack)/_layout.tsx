@@ -22,7 +22,9 @@ const LayoutScreen = () => {
         <Stack.Screen name="home/index" options={{
           title: 'Inicio',
         }} />
-        
+        <Stack.Screen name="search-results" options={{
+          title: 'Resultados de búsqueda',
+        }} />
       </Stack>
   )
 }

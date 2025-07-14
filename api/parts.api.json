@@ -7,7 +7,7 @@
       "price": 29.99,
       "manufacturer": "ACME Brakes",
       "stock": 150,
-      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product1_y7zu3b.png"
+      "image": ["https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product1_y7zu3b.png", "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product1_y7zu3b.png" ]
     },
     {
       "id": 2,
@@ -16,7 +16,7 @@
       "price": 9.99,
       "manufacturer": "FilterPro",
       "stock": 300,
-      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product2_kbeeri.png"
+      "image": ["https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product2_kbeeri.png", "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product2_kbeeri.png"]
     },
     {
       "id": 3,
@@ -25,7 +25,7 @@
       "price": 14.99,
       "manufacturer": "FilterPro",
       "stock": 200,
-      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product3_muwnib.png"
+      "image": ["https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product3_muwnib.png", "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162603/viparts/product3_muwnib.png"]
     },
     {
       "id": 4,
@@ -34,7 +34,7 @@
       "price": 19.99,
       "manufacturer": "BrightLights",
       "stock": 100,
-      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"
+      "image": ["https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png", "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"]
     },
     {
       "id": 5,
@@ -43,7 +43,7 @@
       "price": 4.99,
       "manufacturer": "SparkCo",
       "stock": 500,
-      "image": "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"
+      "image": ["https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png", "https://res.cloudinary.com/dujjge7ec/image/upload/v1737162602/viparts/product4_ufrlbe.png"]
     }
   ]
 }

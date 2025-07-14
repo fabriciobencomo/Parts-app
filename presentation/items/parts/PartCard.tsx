@@ -7,22 +7,17 @@ import { Pressable } from 'react-native-gesture-handler'
 import { router } from 'expo-router'
 
 interface Props {
-  id: number
-  image: string;
-  name: string;
+  part: AutoPart;
 }
 
-const PartCard = ({image, name, id}: Props) => {
-
-
+const PartCard = ({ part }: Props) => {
   return (
-    <Pressable onPress={() => router.push(`/(stack)/part/${id}`)}>  
+    <Pressable onPress={() => router.push(`/part/${part.id}`)}>  
       <ThemedView style={styles.ThemedView}>
-        <Image source={{uri: image}} style={{height:140, width: 140}}/>
-        <Text style={styles.text} numberOfLines={3}>{name}</Text>
+        <Image source={{uri: part.image[0]}} style={{height:140, width: 140}}/>
+        <Text style={styles.text} numberOfLines={3}>{part.name}</Text>
       </ThemedView>
     </Pressable>
-      
   )
 }
 
