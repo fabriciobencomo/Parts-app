@@ -14,9 +14,10 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useParts } from '@/hooks/parts/useParts';
-import { AutoPart } from '@/core/interfaces/parts.interface';
+import { useProducts } from '@/presentation/products/hooks/useProducts';
+import { Product } from '@/core/products/interfaces/product.interface';
 import { LinearGradient } from 'expo-linear-gradient';
+import SearchComponent from '@/presentation/shared/components/SearchComponent';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,65 +25,55 @@ const SearchResultsScreen = () => {
   const { query: initialQuery } = useLocalSearchParams<{ query: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { autoParts } = useParts();
-  const inputRef = useRef<TextInput>(null);
+  const { productsQuery } = useProducts();
+  const [searchTerm, setSearchTerm] = useState(initialQuery || '');
+  const [overlayVisible, setOverlayVisible] = useState(false);
 
-  const [search, setSearch] = useState(initialQuery || '');
-  const [displayedItems, setDisplayedItems] = useState<AutoPart[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  // Procesar productos
+  const allProducts = React.useMemo(() => {
+    if (!productsQuery.data) return [];
+    if ('pages' in productsQuery.data) {
+      return productsQuery.data.pages.flat();
+    }
+    return Array.isArray(productsQuery.data) ? productsQuery.data : [];
+  }, [productsQuery.data]);
 
-  // Filter products based on search query
+  // Filtrar productos en tiempo real
   const filteredProducts = React.useMemo(() => {
-    if (!search) return autoParts;
-    const searchTerm = search.toLowerCase();
-    return autoParts.filter(product => 
-      product.name.toLowerCase().includes(searchTerm) ||
-      product.category.toLowerCase().includes(searchTerm) ||
-      product.manufacturer.toLowerCase().includes(searchTerm)
-    );
-  }, [search, autoParts]);
+    const search = searchTerm.toLowerCase().trim();
+    if (!search) return allProducts;
+    
+    return allProducts.filter(product => {
+      const name = product.name.toLowerCase();
+      const category = (product.category?.name || '').toLowerCase();
+      const brand = (product.brand?.name || '').toLowerCase();
+      
+      return name.includes(search) || 
+             category.includes(search) || 
+             brand.includes(search);
+    });
+  }, [searchTerm, allProducts]);
 
-  // Load initial items or when search changes
-  React.useEffect(() => {
-    const initialItems = filteredProducts.slice(0, ITEMS_PER_PAGE);
-    setDisplayedItems(initialItems);
-    setCurrentPage(1);
-    setHasMore(filteredProducts.length > ITEMS_PER_PAGE);
-  }, [filteredProducts]);
-
-  // Load more items function
-  const loadMoreItems = useCallback(() => {
-    if (loading || !hasMore) return;
-    setLoading(true);
-    setTimeout(() => {
-      const nextPage = currentPage + 1;
-      const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
-      const endIndex = startIndex + ITEMS_PER_PAGE;
-      const newItems = filteredProducts.slice(startIndex, endIndex);
-      setDisplayedItems(prev => [...prev, ...newItems]);
-      setCurrentPage(nextPage);
-      setHasMore(endIndex < filteredProducts.length);
-      setLoading(false);
-    }, 500);
-  }, [currentPage, filteredProducts, loading, hasMore]);
-
-  // Handle search submit
-  const handleSearchSubmit = () => {
-    Keyboard.dismiss();
-    // No navigation, just update results in place
-    // The filteredProducts useEffect will handle updating the list
-  };
+  // Manejar cambios en la búsqueda
+  const onSearchChange = useCallback((text: string) => {
+    console.log('Search changed to:', text);
+    setSearchTerm(text);
+  }, []);
 
   // Render item
-  const renderItem = ({ item }: { item: AutoPart }) => (
+  const renderItem = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.productCard}
-      onPress={() => router.push(`/part/${item.id}`)}
+      onPress={() => {
+        console.log('Navigating to product:', item);
+        router.push({
+          pathname: '/(parts-app)/(tabs)/(stack)/part/[id]',
+          params: { id: item.id.toString() }
+        });
+      }}
     >
       <Image
-        source={{ uri: item.image[0] }}
+        source={{ uri: item.images?.[0] }}
         style={styles.productImage}
         resizeMode="cover"
       />
@@ -90,7 +81,7 @@ const SearchResultsScreen = () => {
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
         </Text>
-        <Text style={styles.productBrand}>{item.manufacturer}</Text>
+        <Text style={styles.productBrand}>{item.brand.name}</Text>
         <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
         <View style={styles.stockInfo}>
           <Text style={styles.stockText}>
@@ -100,17 +91,6 @@ const SearchResultsScreen = () => {
       </View>
     </TouchableOpacity>
   );
-
-  // Render footer (loading indicator)
-  const renderFooter = () => {
-    if (!loading) return null;
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color="#007AFF" />
-        <Text style={styles.loadingText}>Cargando más productos...</Text>
-      </View>
-    );
-  };
 
   // Render empty state
   const renderEmpty = () => (
@@ -123,9 +103,17 @@ const SearchResultsScreen = () => {
     </View>
   );
 
+  if (productsQuery.isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color="#1976D2" />
+        <Text style={styles.loadingText}>Cargando productos...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
-      {/* Gradient header with search bar and back arrow */}
       <LinearGradient
         colors={["#0A2E73", "#1976D2"]}
         start={{ x: 0, y: 0 }}
@@ -135,47 +123,42 @@ const SearchResultsScreen = () => {
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.replace('/')} // Go to home
+            onPress={() => router.back()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={28} color="#fff" />
           </TouchableOpacity>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              placeholder="Buscar..."
-              value={search}
-              onChangeText={setSearch}
-              placeholderTextColor="#7D8597"
-              returnKeyType="search"
-              onSubmitEditing={handleSearchSubmit}
-              autoCorrect={false}
-              autoCapitalize="none"
+          <View style={styles.searchBarWrapper}>
+            <SearchComponent
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+              results={[]}
+              disableNavigation={true}
+              rounded={false}
+              onFocus={() => setOverlayVisible(true)}
             />
           </View>
         </View>
       </LinearGradient>
 
-      {/* Results count */}
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsCount}>
           {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
         </Text>
       </View>
 
-      {/* Products list */}
       <FlatList
-        data={displayedItems}
+        data={filteredProducts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        onEndReached={loadMoreItems}
-        onEndReachedThreshold={0.1}
-        ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        removeClippedSubviews={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
       />
     </View>
   );
@@ -311,5 +294,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  searchBarWrapper: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
 }); 

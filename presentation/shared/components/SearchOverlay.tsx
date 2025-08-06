@@ -1,24 +1,27 @@
 import React, { useRef } from 'react';
 import { View, TextInput, StyleSheet, Text, FlatList, Image, Pressable, TouchableOpacity, Keyboard } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-interface Part {
-  id: number;
-  name: string;
-  image: string | string[];
-}
+import { Product } from '@/core/products/interfaces/product.interface';
 
 interface Props {
   visible: boolean;
   value: string;
   onChangeText: (text: string) => void;
   onCancel: () => void;
-  results: Part[];
-  onResultPress: (part: Part) => void;
+  results: Product[];
+  onResultPress: (part: Product) => void;
   onSubmit: () => void;
 }
 
-const SearchOverlay: React.FC<Props> = ({ visible, value, onChangeText, onCancel, results, onResultPress, onSubmit }) => {
+const SearchOverlay: React.FC<Props> = ({ 
+  visible, 
+  value, 
+  onChangeText, 
+  onCancel, 
+  results, 
+  onResultPress, 
+  onSubmit 
+}) => {
   const inputRef = useRef<TextInput>(null);
 
   if (!visible) return null;
@@ -39,24 +42,45 @@ const SearchOverlay: React.FC<Props> = ({ visible, value, onChangeText, onCancel
             returnKeyType="search"
             onSubmitEditing={onSubmit}
           />
+          {value.length > 0 && (
+            <TouchableOpacity onPress={() => onChangeText('')} style={styles.clearButton}>
+              <Ionicons name="close-circle-outline" size={20} color="#7D8597" />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity onPress={onCancel} style={styles.cancelButton}>
           <Text style={styles.cancelText}>Cancelar</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={results}
-        keyExtractor={item => item.id.toString()}
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => (
-          <Pressable style={styles.resultItem} onPress={() => onResultPress(item)}>
-            <Image source={{ uri: Array.isArray(item.image) ? item.image[0] : item.image }} style={styles.resultImage} />
-            <Text style={styles.resultText}>{item.name}</Text>
-          </Pressable>
-        )}
-        ListEmptyComponent={<Text style={styles.emptyText}>Sin resultados</Text>}
-        style={styles.resultsList}
-      />
+      {results.length > 0 && (
+        <FlatList
+          data={results}
+          keyExtractor={item => item.id.toString()}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <Pressable 
+              style={styles.resultItem} 
+              onPress={() => {
+                Keyboard.dismiss();
+                onResultPress(item);
+              }}
+            >
+              <Image 
+                source={{ uri: item.images?.[0] }} 
+                style={styles.resultImage} 
+              />
+              <Text style={styles.resultText}>{item.name}</Text>
+            </Pressable>
+          )}
+          style={styles.resultsList}
+        />
+      )}
+      {value.length > 0 && results.length === 0 && (
+        <View style={styles.noResults}>
+          <Text style={styles.noResultsTitle}>No se encontraron resultados</Text>
+          <Text style={styles.noResultsSubtitle}>Intenta con otros términos de búsqueda</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -68,78 +92,83 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'white',
+    backgroundColor: '#F4F4F4',
     zIndex: 100,
-    paddingTop: 60,
-    paddingHorizontal: 16,
   },
   searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 8,
+    backgroundColor: 'white',
   },
   inputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 36,
   },
   icon: {
     marginRight: 8,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#001845',
-    backgroundColor: 'transparent',
-    paddingVertical: 0,
+    fontSize: 17,
+    color: '#000',
+    padding: 0,
+  },
+  clearButton: {
+    padding: 4,
   },
   cancelButton: {
-    marginLeft: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    marginLeft: 10,
+    padding: 4,
   },
   cancelText: {
-    color: '#1976D2',
-    fontWeight: '700',
-    fontSize: 16,
+    color: '#007AFF',
+    fontSize: 17,
   },
   resultsList: {
-    flex: 1,
+    backgroundColor: 'white',
   },
   resultItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    padding: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#C8C8C8',
   },
   resultImage: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     marginRight: 12,
     backgroundColor: '#F4F4F4',
   },
   resultText: {
-    fontSize: 16,
-    color: '#001845',
+    fontSize: 17,
+    color: '#000',
+  },
+  noResults: {
+    alignItems: 'center',
+    paddingTop: 40,
+    backgroundColor: 'white',
     flex: 1,
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#7D8597',
-    marginTop: 32,
-    fontSize: 16,
+  noResultsTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  noResultsSubtitle: {
+    fontSize: 15,
+    color: '#8E8E93',
   },
 });
 

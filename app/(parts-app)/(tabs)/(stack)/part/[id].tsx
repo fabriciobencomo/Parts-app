@@ -1,22 +1,29 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, useWindowDimensions, Pressable, Image, StyleSheet, FlatList, Animated, NativeSyntheticEvent, NativeScrollEvent, Modal, TouchableOpacity } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, useWindowDimensions, Pressable, Image, StyleSheet, FlatList, Animated, NativeSyntheticEvent, NativeScrollEvent, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { usePart } from '@/hooks/parts/usePart';
+import { useProduct } from '@/presentation/products/hooks/useProduct';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '../../../../../constants/Colors';
 
 const PartScreen = () => {
-  const {id} = useLocalSearchParams();
-  const part = usePart(id)
-  const primaryColor = useThemeColor({}, 'primary')
-  const {height, width} = useWindowDimensions()
-  const images = Array.isArray(part.image) ? part.image : [part.image];
+  const params = useLocalSearchParams();
+  const id = params?.id;
+  const productId = Array.isArray(id) ? id[0] : id;
 
-  // Carrusel
+  useEffect(() => {
+    // You can perform side effects here if needed, or remove this useEffect if not used
+  }, [productId]);
+
+  if (!productId) return null;
+  const { productQuery } = useProduct(productId);
+  const primaryColor = useThemeColor({}, 'primary');
+  const { height, width } = useWindowDimensions();
+  const part = productQuery.data;
+  const images = part?.images || [];
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef(null);
+  const flatListRef = useRef<FlatList<string> | null>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
   const handleScroll = Animated.event(
@@ -24,7 +31,8 @@ const PartScreen = () => {
     {
       useNativeDriver: false,
       listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const index = Math.round(event.nativeEvent.contentOffset.x / width);
+        const slideSize = width;
+        const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
         setActiveIndex(index);
       }
     }
@@ -35,7 +43,7 @@ const PartScreen = () => {
 
   return (
     <View style={{flex: 1, backgroundColor: '#F4F4F4', paddingBottom: 32}}>
-      {/* Header with back button and favorite */}
+      {/* Header */}
       <View style={{position: 'relative', backgroundColor: '#F4F4F4'}}>
         {/* Back Button */}
         <Pressable
@@ -48,54 +56,66 @@ const PartScreen = () => {
         <Pressable style={styles.favoriteButton}>
           <Ionicons name='heart-outline' size={24} color='#6B7280' />
         </Pressable>
-        {/* Product Images Carousel */}
-        <View style={styles.imageContainer}>
-          <Animated.FlatList
-            ref={flatListRef}
-            data={images}
-            keyExtractor={(item, idx) => idx.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            renderItem={({ item }) => (
-              <View style={{ width, alignItems: 'center', justifyContent: 'center' }}>
-                <Image style={[styles.image, { width: width * 0.7, height: 220 }]} source={{ uri: item }} resizeMode='contain' />
-              </View>
-            )}
-          />
-          {/* Pagination Dots */}
-          <View style={styles.pagination}>
-            {images.map((_, idx) => (
-              <View
-                key={idx}
-                style={[styles.dot, activeIndex === idx && styles.activeDot]}
-              />
-            ))}
-          </View>
+      </View>
+      {/* Product Images Carousel */}
+      <View style={styles.imageContainer}>
+        <Animated.FlatList
+          ref={flatListRef}
+          data={images}
+          keyExtractor={(item, idx) => idx.toString()}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          getItemLayout={(data, index) => ({
+            length: width,
+            offset: width * index,
+            index,
+          })}
+          renderItem={({ item }) => (
+            <View style={{ width, alignItems: 'center', justifyContent: 'center' }}>
+              <Image style={[styles.image, { width: width * 0.7, height: 220 }]} source={{ uri: item }} resizeMode='contain' />
+            </View>
+          )}
+        />
+        {/* Pagination Dots */}
+        <View style={styles.pagination}>
+          {images.map((_, idx) => (
+            <View
+              key={idx}
+              style={[styles.dot, activeIndex === idx && styles.activeDot]}
+            />
+          ))}
         </View>
       </View>
 
       {/* Product Info Card */}
       <View style={[styles.infoCard, { minHeight: height * 0.5, flexGrow: 1 }]}>
         {/* Title */}
-        <Text style={styles.title}>{part.name}</Text>
+        <Text style={styles.title}>{part?.name}</Text>
+        
         {/* Price and Brand Row */}
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{part.price}$</Text>
+          <Text style={styles.price}>${part?.price}</Text>
           {/* Brand badge */}
-          <View style={styles.brandBadge}>
-            <Image source={{uri:'https://pbs.twimg.com/profile_images/1760289777180405761/skE3Y_hJ_400x400.png'}} style={styles.brandLogo} />
-            <Text style={styles.brandText}>Motorcraft</Text>
-          </View>
+          {part?.brand && (
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandText}>{part.brand.name}</Text>
+            </View>
+          )}
         </View>
+
         {/* Details */}
         <Text style={styles.sectionTitle}>Detalles:</Text>
         <View style={{marginTop: 4, marginBottom: 12}}>
-          <Text style={styles.detailLabel}>Modelo: <Text style={styles.detailValue}>0W20</Text></Text>
-          <Text style={styles.detailLabel}>Garantía: <Text style={styles.detailValue}>1 mes</Text></Text>
+          <Text style={styles.detailLabel}>Modelo: <Text style={styles.detailValue}>{part?.model}</Text></Text>
+          <Text style={styles.detailLabel}>Garantía: <Text style={styles.detailValue}>{part?.warrantyMonths} meses</Text></Text>
+          <Text style={styles.detailLabel}>Stock: <Text style={styles.detailValue}>{part?.stock}</Text></Text>
+          <Text style={styles.detailLabel}>Categoría: <Text style={styles.detailValue}>{part?.category?.name}</Text></Text>
+          <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{part?.description}</Text></Text>
         </View>
+
         {/* Quantity Row */}
         <View style={{marginTop: 20, display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           <Text style={styles.subtitle}>Cantidad:</Text>
@@ -103,6 +123,7 @@ const PartScreen = () => {
             <Text style={styles.quantityText}>{quantity}</Text>
           </Pressable>
         </View>
+
         {/* Modal de selección de cantidad */}
         <Modal
           visible={modalVisible}
@@ -110,7 +131,11 @@ const PartScreen = () => {
           animationType="fade"
           onRequestClose={() => setModalVisible(false)}
         >
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
+          <TouchableOpacity 
+            style={styles.modalOverlay} 
+            activeOpacity={1} 
+            onPress={() => setModalVisible(false)}
+          >
             <View style={styles.modalContent}>
               {[...Array(10)].map((_, idx) => (
                 <Pressable
@@ -127,19 +152,32 @@ const PartScreen = () => {
             </View>
           </TouchableOpacity>
         </Modal>
+
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
-          <Pressable style={styles.cartButton}>
+          <Pressable 
+            style={styles.cartButton}
+            onPress={() => {
+              // TODO: Implementar lógica de agregar al carrito
+              console.log('Agregar al carrito:', { productId: part?.id, quantity });
+            }}
+          >
             <Ionicons name='cart-outline' size={18} color={primaryColor} style={{marginRight: 10}} />
             <Text style={styles.cartButtonText}>Agregar</Text>
           </Pressable>
-          <Pressable style={styles.buyButton}>
+          <Pressable 
+            style={styles.buyButton}
+            onPress={() => {
+              // TODO: Implementar lógica de compra directa
+              console.log('Comprar ahora:', { productId: part?.id, quantity });
+            }}
+          >
             <Text style={styles.buyButtonText}>Comprar ahora</Text>
           </Pressable>
         </View>
       </View>
     </View>
-  )
+  );
 }
 
 export default PartScreen

@@ -4,18 +4,21 @@ import { ThemedView } from '@/presentation/shared/components/ThemedView'
 import { AutoPart } from '@/core/interfaces/parts.interface'
 import { Pressable } from 'react-native-gesture-handler'
 import { router } from 'expo-router'
+import { Product } from '@/core/products/interfaces/product.interface';
 
 interface Props {
-  part: AutoPart;
+  part: Product;
 }
 
 const PartCard = ({ part }: Props) => {
   return (
-    <Pressable onPress={() => router.push(`/part/${part.id}`)}>
+    <Pressable onPress={() => router.push({ pathname: '/(parts-app)/(tabs)/(stack)/part/[id]', params: { id: part.id } })}>
       <View style={styles.card}>
-        <Image source={{ uri: part.image[0] }} style={styles.image} />
+        <Image source={{ uri: part.images?.[0] || '' }} style={styles.image} />
         <Text style={styles.name} numberOfLines={2}>{part.name}</Text>
         <Text style={styles.price}>${part.price % 1 === 0 ? part.price : part.price.toFixed(2)}</Text>
+        <Text style={styles.model}>{part.model}</Text>
+        <Text style={styles.brand}>{part.brand?.name}</Text>
       </View>
     </Pressable>
   )
@@ -59,5 +62,18 @@ const styles = StyleSheet.create({
     color: '#1976D2',
     textAlign: 'center',
     marginTop: 2,
+  },
+  model: {
+    fontSize: 12,
+    color: '#7D8597',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  brand: {
+    fontSize: 12,
+    color: '#1976D2',
+    textAlign: 'center',
+    marginTop: 2,
+    fontWeight: '600',
   },
 });

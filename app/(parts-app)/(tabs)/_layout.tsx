@@ -2,18 +2,20 @@ import React, { useState, useMemo } from 'react';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Tabs, useSegments } from 'expo-router';
 import { Text, StyleSheet, View } from 'react-native';
-import { useParts } from '@/hooks/parts/useParts';
+import { useProducts } from '@/presentation/products/hooks/useProducts';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
 import SearchOverlay from '@/presentation/shared/components/SearchOverlay';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Product } from '@/core/products/interfaces/product.interface';
 
 export default function TabLayout() {
   const backgroundColor = useThemeColor({}, 'primary');
   const safeArea = useSafeAreaInsets();
-  const { autoParts } = useParts();
+  const { productsQuery } = useProducts();
+  const products = productsQuery.data || [];
   const segments = useSegments() as string[];
 
   // Search state global para todos los tabs
@@ -25,14 +27,17 @@ export default function TabLayout() {
   // Resultados filtrados para el overlay
   const results = useMemo(() => {
     if (!search.trim()) return [];
-    return autoParts.filter(part =>
-      part.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-      part.category.toLowerCase().includes(search.trim().toLowerCase()) ||
-      part.manufacturer.toLowerCase().includes(search.trim().toLowerCase())
-    );
-  }, [search, autoParts]);
+    if (!overlayVisible) return []; // No mostrar resultados si el overlay no está visible
+    
+    const searchTerm = search.trim().toLowerCase();
+    return (Array.isArray(products) ? products : []).filter(part =>
+      part.name.toLowerCase().includes(searchTerm) ||
+      part.category.name.toLowerCase().includes(searchTerm) ||
+      part.brand.name.toLowerCase().includes(searchTerm)
+    ).slice(0, 5); // Mostrar solo los primeros 5 resultados en el overlay
+  }, [search, products, overlayVisible]);
 
-  const handleResultPress = (part) => {
+  const handleResultPress = (part: Product) => {
     setSearch('');
     setShowResults(false);
     setOverlayVisible(false);
@@ -47,24 +52,31 @@ export default function TabLayout() {
   // Detectar si estamos en la pantalla de resultados de búsqueda
   const isSearchResultsPage = segments.includes('search-results');
 
+  const handleSearchSubmit = () => {
+    if (search.trim()) {
+      setOverlayVisible(false);
+      router.push({
+        pathname: '/(parts-app)/(tabs)/(stack)/search-results',
+        params: { query: search.trim() }
+      });
+    }
+  };
+
+  const handleSearchFocus = () => {
+    if (isSearchResultsPage) {
+      // Si ya estamos en la página de resultados, mostrar el overlay
+      setOverlayVisible(true);
+    } else {
+      // Si no, mostrar el overlay normalmente
+      setOverlayVisible(true);
+    }
+  };
+
   const handleCancel = () => {
     setOverlayVisible(false);
     setSearch('');
     setShowResults(false);
     setSubmitted(false);
-  };
-
-  const handleSearchSubmit = () => {
-    if (search.trim()) {
-      setOverlayVisible(false);
-      setSearch('');
-      setShowResults(false);
-      setSubmitted(false);
-      router.push({
-        pathname: '/search-results',
-        params: { query: search.trim() }
-      });
-    }
   };
 
   return (
@@ -82,17 +94,13 @@ export default function TabLayout() {
               { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }
             ]}
           >
-            {/* Saludo solo en el tab de inicio */}
             <Text style={styles.greeting}>Hola Ricardo</Text>
             <View style={styles.searchBarWrapper}>
               <SearchComponent
                 value={search}
-                onChangeText={text => {
-                  setSearch(text);
-                  setShowResults(true);
-                }}
+                onChangeText={text => setSearch(text)}
                 results={[]}
-                onResultPress={() => {}}
+                onResultPress={handleResultPress}
                 onFocus={() => setOverlayVisible(true)}
                 rounded={true}
               />
@@ -103,12 +111,9 @@ export default function TabLayout() {
             <View style={styles.searchBarWrapper}>
               <SearchComponent
                 value={search}
-                onChangeText={text => {
-                  setSearch(text);
-                  setShowResults(true);
-                }}
+                onChangeText={text => setSearch(text)}
                 results={[]}
-                onResultPress={() => {}}
+                onResultPress={handleResultPress}
                 onFocus={() => setOverlayVisible(true)}
                 rounded={false}
               />
@@ -116,17 +121,14 @@ export default function TabLayout() {
           </View>
         )
       )}
-      {/* Overlay de búsqueda avanzado */}
+
+      {/* Overlay de búsqueda */}
       <SearchOverlay
         visible={overlayVisible}
         value={search}
-        onChangeText={text => {
-          setSearch(text);
-          setShowResults(true);
-          setSubmitted(false);
-        }}
+        onChangeText={text => setSearch(text)}
         onCancel={handleCancel}
-        results={submitted ? results : (search ? results.slice(0, 5) : [])}
+        results={results}
         onResultPress={handleResultPress}
         onSubmit={handleSearchSubmit}
       />

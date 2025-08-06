@@ -1,12 +1,12 @@
 import { View, Text, FlatList, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import React, { useEffect, useRef } from 'react'
-import { AutoPart } from '@/core/interfaces/parts.interface';
+import { Product } from '@/core/products/interfaces/product.interface';
 import PartCard from './PartCard';
 import { StyleSheet } from 'react-native';
 
 interface Props {
   title?: string,
-  parts: AutoPart[];
+  parts: Product[];
   loadNextPage?: () => void
 }
 
