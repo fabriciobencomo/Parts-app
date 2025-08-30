@@ -3,6 +3,7 @@ import { View, TextInput, StyleSheet, FlatList, Text, Image, Pressable } from 'r
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { useRouter } from 'expo-router';
 import { Product } from '@/core/products/interfaces/product.interface';
+import { getFirstValidImage } from '@/helpers/image-utils';
 
 interface Props {
   value: string;
@@ -69,7 +70,7 @@ const SearchComponent: React.FC<Props> = ({
                 onPress={() => onResultPress && onResultPress(item)}
               >
                 <Image 
-                  source={{ uri: item.images?.[0] }} 
+                  source={{ uri: getFirstValidImage(item.images) }} 
                   style={styles.resultImage}
                 />
                 <Text style={styles.resultText}>{item.name}</Text>

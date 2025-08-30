@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Tabs, useSegments } from 'expo-router';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import { useProducts } from '@/presentation/products/hooks/useProducts';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
 import SearchOverlay from '@/presentation/shared/components/SearchOverlay';
@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/core/products/interfaces/product.interface';
+import { useAuthStore } from '@/presentation/store/useAuthStore';
 
 export default function TabLayout() {
   const backgroundColor = useThemeColor({}, 'primary');
@@ -17,6 +18,7 @@ export default function TabLayout() {
   const { productsQuery } = useProducts();
   const products = productsQuery.data || [];
   const segments = useSegments() as string[];
+  const { logout, user } = useAuthStore();
 
   // Search state global para todos los tabs
   const [search, setSearch] = useState('');
@@ -79,6 +81,25 @@ export default function TabLayout() {
     setSubmitted(false);
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro que deseas cerrar sesión?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Cerrar Sesión', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.dismissAll();  // Clear all navigation history
+            router.replace('/auth/welcome');
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
       {/* Header global solo si NO estamos en la página de producto NI en la de resultados de búsqueda */}
@@ -94,7 +115,12 @@ export default function TabLayout() {
               { borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }
             ]}
           >
-            <Text style={styles.greeting}>Hola Ricardo</Text>
+            <View style={styles.headerTop}>
+              <Text style={styles.greeting}>Hola {user?.name || 'Usuario'}</Text>
+              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                <Ionicons name="exit-outline" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
             <View style={styles.searchBarWrapper}>
               <SearchComponent
                 value={search}
@@ -175,11 +201,21 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   greeting: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
-    marginTop: 8,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   searchBarWrapper: {
     marginTop: 16,

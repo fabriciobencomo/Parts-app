@@ -1,10 +1,9 @@
 import { View, Text, Image, StyleSheet } from 'react-native'
 import React from 'react'
-import { ThemedView } from '@/presentation/shared/components/ThemedView'
-import { AutoPart } from '@/core/interfaces/parts.interface'
 import { Pressable } from 'react-native-gesture-handler'
 import { router } from 'expo-router'
-import { Product } from '@/core/products/interfaces/product.interface';
+import { Product } from '@/core/products/interfaces/product.interface'
+import { getFirstValidImage } from '@/helpers/image-utils';
 
 interface Props {
   part: Product;
@@ -14,7 +13,7 @@ const PartCard = ({ part }: Props) => {
   return (
     <Pressable onPress={() => router.push({ pathname: '/(parts-app)/(tabs)/(stack)/part/[id]', params: { id: part.id } })}>
       <View style={styles.card}>
-        <Image source={{ uri: part.images?.[0] || '' }} style={styles.image} />
+        <Image source={{ uri: getFirstValidImage(part.images) }} style={styles.image} />
         <Text style={styles.name} numberOfLines={2}>{part.name}</Text>
         <Text style={styles.price}>${part.price % 1 === 0 ? part.price : part.price.toFixed(2)}</Text>
         <Text style={styles.model}>{part.model}</Text>

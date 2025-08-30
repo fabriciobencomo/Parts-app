@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '../../../../../constants/Colors';
+import { getValidImages } from '@/helpers/image-utils';
 
 const PartScreen = () => {
   const params = useLocalSearchParams();
@@ -21,7 +22,7 @@ const PartScreen = () => {
   const primaryColor = useThemeColor({}, 'primary');
   const { height, width } = useWindowDimensions();
   const part = productQuery.data;
-  const images = part?.images || [];
+  const images = getValidImages(part?.images);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList<string> | null>(null);
   const scrollX = useRef(new Animated.Value(0)).current;

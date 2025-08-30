@@ -6,24 +6,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/presentation/shared/components/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { ThemedView } from '@/presentation/shared/components/ThemedView';
+import { useAuthStore } from '@/presentation/store/useAuthStore';
 
 
 const LayoutScreen = () => {
   const primaryColor = useThemeColor({} , 'primary')
+  const { status } = useAuthStore()
 
-  const auth = true;
-
-  if (!auth) {
-    return <Redirect href='/auth/login' />
+  if (status !== 'authenticated') {
+    return <Redirect href='/auth/welcome' />
   }
 
   return (
-      <Stack screenOptions={{headerShown: false, headerTintColor:primaryColor,  headerTitleStyle:{color:primaryColor} }}>
+      <Stack screenOptions={{
+        headerShown: false, 
+        headerTintColor: primaryColor,  
+        headerTitleStyle: { color: primaryColor },
+        gestureEnabled: false,  // Disable swipe gestures
+      }}>
         <Stack.Screen name="home/index" options={{
           title: 'Inicio',
+          gestureEnabled: false,  // No swipe back from home
         }} />
         <Stack.Screen name="search-results" options={{
           title: 'Resultados de búsqueda',
+          gestureEnabled: true,   // Allow back from search results
+        }} />
+        <Stack.Screen name="part/[id]" options={{
+          title: 'Producto',
+          gestureEnabled: true,   // Allow back from product detail
         }} />
       </Stack>
   )

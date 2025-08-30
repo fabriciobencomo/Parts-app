@@ -2,11 +2,12 @@ import { View, Text, TextInput, KeyboardAvoidingView, ScrollView, useWindowDimen
 import React, { useState, useEffect } from 'react'
 import { useThemeColor } from '@/hooks/useThemeColor'
 import { ThemedText } from '@/presentation/shared/components/ThemedText'
-import { router } from 'expo-router'
+import ThemedButton from '@/presentation/shared/components/ThemedButton'
+import { Link, router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/presentation/store/useAuthStore'
 
-const LoginScreen = () => {
+const RegisterScreen = () => {
 
   const backgroundColor = '#FFFFFF' // White background as requested
   const textColor = useThemeColor({}, 'text')
@@ -14,13 +15,17 @@ const LoginScreen = () => {
 
   // Form state
   const [formData, setFormData] = useState({
+    fullName: '',
+    cedula: '',
+    phone: '',
     email: '',
+    vehicleInfo: '',
     password: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login, status } = useAuthStore();
+  const { register, status } = useAuthStore();
 
      // Redirect to home if user is already authenticated
    useEffect(() => {
@@ -36,10 +41,10 @@ const LoginScreen = () => {
     }));
   };
 
-  const handleLogin = async () => {
+  const handleContinue = async () => {
     // Basic validation
-    if (!formData.email || !formData.password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.password) {
+      Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
       return;
     }
 
@@ -48,16 +53,24 @@ const LoginScreen = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      const success = await login(formData.email, formData.password);
+      const success = await register({
+        ...formData,
+        password: formData.password
+      });
 
-      if (success) {
-        // Navigate directly to home and reset navigation stack
-        router.replace('/(parts-app)/(tabs)/(stack)/home');
-      } else {
-        Alert.alert('Error', 'Email o contraseña incorrectos');
+              if (success) {
+          // Navigate directly to home and reset navigation stack
+          router.replace('/(parts-app)/(tabs)/(stack)/home');
+        } else {
+        Alert.alert('Error', 'No se pudo crear la cuenta. Intenta nuevamente.');
       }
     } catch (error) {
       Alert.alert('Error', 'Ocurrió un error inesperado');
@@ -68,30 +81,74 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView behavior='padding' style={{ flex: 1 }}>
-      <ScrollView style={[styles.container, { backgroundColor: backgroundColor }]}>
+      <ScrollView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
         
         {/* Header */}
         <View style={styles.header}>
-          <ThemedText type='title' style={styles.title}>Iniciar Sesión</ThemedText>
-          <ThemedText style={styles.subtitle}>Ingresa tus datos para continuar</ThemedText>
+          <ThemedText type='title' style={styles.title}>Regístrate.</ThemedText>
+          <ThemedText style={styles.subtitle}>Usaremos tus datos para crear tu usuario</ThemedText>
         </View>
 
         {/* Form */}
         <View style={styles.formContainer}>
           
+          {/* Full Name Input */}
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="person-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: '#1F2937' }]}
+                placeholder="Nombre y Apellido"
+                placeholderTextColor="#A0A0A0"
+                value={formData.fullName}
+                onChangeText={(value) => updateFormData('fullName', value)}
+                autoCapitalize="words"
+              />
+            </View>
+          </View>
+
+          {/* Cedula Input
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="card-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: '#1F2937' }]}
+                placeholder="Cédula"
+                placeholderTextColor="#A0A0A0"
+                value={formData.cedula}
+                onChangeText={(value) => updateFormData('cedula', value)}
+                keyboardType="numeric"
+              />
+            </View>
+          </View> */}
+
+          {/* Phone Input */}
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="call-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, { color: '#1F2937' }]}
+                placeholder="Número de teléfono"
+                placeholderTextColor="#A0A0A0"
+                value={formData.phone}
+                onChangeText={(value) => updateFormData('phone', value)}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
+
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <Ionicons name="mail-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
               <TextInput
                 style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Correo electrónico"
+                placeholder="Correo"
                 placeholderTextColor="#A0A0A0"
                 value={formData.email}
                 onChangeText={(value) => updateFormData('email', value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                autoComplete="email"
               />
             </View>
           </View>
@@ -128,22 +185,22 @@ const LoginScreen = () => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
             style={[styles.continueButton, isLoading && styles.continueButtonDisabled]}
-            onPress={handleLogin}
+            onPress={handleContinue}
             disabled={isLoading}
           >
             <Text style={styles.continueButtonText}>
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {isLoading ? 'Registrando...' : 'Continuar'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Register Link */}
-        <View style={styles.registerLinkContainer}>
-          <Text style={styles.registerLinkText}>
-            ¿No tienes cuenta?{' '}
+        {/* Login Link */}
+        <View style={styles.loginLinkContainer}>
+          <Text style={styles.loginLinkText}>
+            ¿Ya tienes cuenta?{' '}
           </Text>
-          <TouchableOpacity onPress={() => router.push('/auth/register')}>
-            <Text style={styles.registerLink}>Regístrate</Text>
+          <TouchableOpacity onPress={() => router.push('/auth/login')}>
+            <Text style={styles.loginLink}>Inicia sesión</Text>
           </TouchableOpacity>
         </View>
 
@@ -224,21 +281,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#94A3B8',
     opacity: 0.7,
   },
-  registerLinkContainer: {
+  loginLinkContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
   },
-  registerLinkText: {
+  loginLinkText: {
     fontSize: 14,
     color: '#64748B',
   },
-  registerLink: {
+  loginLink: {
     fontSize: 14,
     color: '#1E3A8A',
     fontWeight: '600',
   },
 });
 
-export default LoginScreen
+export default RegisterScreen

@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { View, TextInput, StyleSheet, Text, FlatList, Image, Pressable, TouchableOpacity, Keyboard } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Product } from '@/core/products/interfaces/product.interface';
+import { getFirstValidImage } from '@/helpers/image-utils';
 
 interface Props {
   visible: boolean;
@@ -66,7 +67,7 @@ const SearchOverlay: React.FC<Props> = ({
               }}
             >
               <Image 
-                source={{ uri: item.images?.[0] }} 
+                source={{ uri: getFirstValidImage(item.images) }} 
                 style={styles.resultImage} 
               />
               <Text style={styles.resultText}>{item.name}</Text>

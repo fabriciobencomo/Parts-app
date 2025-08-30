@@ -14,6 +14,7 @@ configureReanimatedLogger({ strict: false });
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useNavigationGuard } from '@/hooks/useNavigationGuard';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -22,6 +23,10 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  
+  // Use navigation guard to prevent unauthorized access
+  useNavigationGuard();
+  
   const [loaded] = useFonts({
     SFUITextBold: require('../assets/fonts/SFUIText-Bold.ttf'),
     SFUITextBoldItalic: require('../assets/fonts/SFUIText-BoldItalic.ttf'),
@@ -51,8 +56,25 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* <Stack.Screen name="/" options={{ headerShown: false }} /> */}
+          <Stack screenOptions={{ 
+            headerShown: false,
+            gestureEnabled: false,  // Disable swipe gestures globally
+          }}>
+            <Stack.Screen 
+              name="(parts-app)" 
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false,  // No swipe back from main app
+              }} 
+            />
+            <Stack.Screen 
+              name="auth" 
+              options={{ 
+                headerShown: false,
+                gestureEnabled: false,  // No swipe gestures in auth
+                presentation: 'modal',  // Treat auth as modal
+              }} 
+            />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

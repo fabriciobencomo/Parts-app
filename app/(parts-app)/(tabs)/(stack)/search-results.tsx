@@ -18,6 +18,7 @@ import { useProducts } from '@/presentation/products/hooks/useProducts';
 import { Product } from '@/core/products/interfaces/product.interface';
 import { LinearGradient } from 'expo-linear-gradient';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
+import { getFirstValidImage } from '@/helpers/image-utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -73,7 +74,7 @@ const SearchResultsScreen = () => {
       }}
     >
       <Image
-        source={{ uri: item.images?.[0] }}
+        source={{ uri: getFirstValidImage(item.images) }}
         style={styles.productImage}
         resizeMode="cover"
       />

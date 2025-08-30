@@ -7,10 +7,17 @@ const STAGE = process.env.EXPO_PUBLIC_STAGE || 'dev';
 
 export const API_URL = 
   (STAGE === 'prod')
-    ? process.env.EXPO_PUBLIC_API_URL
+    ? process.env.EXPO_PUBLIC_API_URL || 'https://your-backend-api.com'
     : (Platform.OS) === 'ios'
-      ? process.env.EXPO_PUBLIC_API_URL_IOS
-      : process.env.EXPO_PUBLIC_API_URL_ANDROID
+      ? process.env.EXPO_PUBLIC_API_URL_IOS || 'http://localhost:3000'
+      : process.env.EXPO_PUBLIC_API_URL_ANDROID || 'http://10.0.2.2:3000'
+
+// Log the API URL for debugging
+console.log('🌐 API Configuration:', {
+  stage: STAGE,
+  platform: Platform.OS,
+  apiUrl: API_URL
+});
 
 
 
