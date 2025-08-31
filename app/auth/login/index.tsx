@@ -25,7 +25,7 @@ const LoginScreen = () => {
      // Redirect to home if user is already authenticated
    useEffect(() => {
      if (status === 'authenticated') {
-       router.replace('/(parts-app)/(tabs)/(stack)/home')
+       router.replace('/(parts-app)')
      }
    }, [status])
 
@@ -55,7 +55,7 @@ const LoginScreen = () => {
 
       if (success) {
         // Navigate directly to home and reset navigation stack
-        router.replace('/(parts-app)/(tabs)/(stack)/home');
+        router.replace('/(parts-app)');
       } else {
         Alert.alert('Error', 'Email o contraseña incorrectos');
       }

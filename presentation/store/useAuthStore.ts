@@ -71,13 +71,17 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const resp = await authCheckStatus();
       if (resp?.token) {
         get().changeStatus(resp.token, resp.user);
+        
+        // If we have a token but no user data, try to load user data
+        if (!resp.user && resp.token) {
+          get().refreshUserData();
+        }
       } else {
         // No valid response, set as unauthenticated
         set({ status: 'unauthenticated', token: undefined, user: undefined });
         await SecureStorageAdapter.removeItem('token');
       }
     } catch (error) {
-      console.log('Check status error:', error);
       // Error occurred, set as unauthenticated
       set({ status: 'unauthenticated', token: undefined, user: undefined });
       await SecureStorageAdapter.removeItem('token');
@@ -97,12 +101,30 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   refreshUserData: async () => {
-    const currentUser = get().user;
-    if (!currentUser?.id) return;
-
-    const userData = await getUserById(currentUser.id);
-    if (userData) {
-      set({ user: userData });
+    const { user: currentUser, token } = get();
+    
+    // If we have user data, use the user ID
+    if (currentUser?.id) {
+      const userData = await getUserById(currentUser.id);
+      if (userData) {
+        set({ user: userData });
+      }
+      return;
+    }
+    
+    // If we don't have user data but have a token, decode it to get user ID
+    if (token && !currentUser) {
+      try {
+        // Import the auth actions here to avoid circular dependency
+        const { authCheckStatus } = await import('@/core/auth/actions/auth-actions');
+        const authData = await authCheckStatus();
+        
+        if (authData?.user) {
+          set({ user: authData.user });
+        }
+      } catch (error) {
+        // Could not refresh user data
+      }
     }
   },
 

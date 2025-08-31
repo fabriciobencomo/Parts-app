@@ -175,25 +175,59 @@ export const authCheckStatus = async () => {
     const storedToken = await SecureStorageAdapter.getItem('token');
     
     if (!storedToken) {
-      console.log('No stored token found');
       return null;
     }
-
-    console.log('Token found, user is likely authenticated');
     
-    // For now, we'll just check if token exists
-    // In a real app, you would validate the token with the backend
-    // But since we don't have a check-status endpoint, we'll assume it's valid
-    // The token will be validated when making actual API calls
+    // Try to decode the JWT to get user ID
+    const decoded = decodeJWT(storedToken);
+    if (!decoded || (!decoded.sub && !decoded.id)) {
+      // Invalid token, remove it
+      await SecureStorageAdapter.removeItem('token');
+      return null;
+    }
     
-    // Return a minimal response to indicate authentication
-    // The actual user data will be loaded when needed
+    const userId = decoded.sub || decoded.id;
+    
+    // Try to fetch current user data
+    try {
+      const userData = await getUserByIdWithToken(userId, storedToken);
+      if (userData) {
+        const user: User = {
+          id: userData.id,
+          email: userData.email || '',
+          name: userData.name || '',
+          role: userData.role || 'user',
+          isActive: userData.isActive ?? true,
+          phoneVerified: userData.phoneVerified ?? false,
+          avatar: userData.avatar,
+          createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date(),
+          password: '', // This should not be stored on client
+          address: userData.address || '',
+          phoneNumber: userData.phoneNumber || '',
+          direction: userData.direction || '',
+          phoneVerificationCode: userData.phoneVerificationCode,
+          updatedAt: userData.updatedAt ? new Date(userData.updatedAt) : new Date(),
+        };
+        
+        return {
+          token: storedToken,
+          user: user
+        };
+      }
+    } catch (fetchError) {
+      // If we can't fetch user data but token is valid, return with token only
+      // The user data will be loaded when needed
+      return {
+        token: storedToken,
+        user: null
+      };
+    }
+    
     return {
       token: storedToken,
-      user: null // Will be loaded on demand
+      user: null
     };
   } catch (error) {
-    console.log('Error checking auth status:', error);
     // Remove invalid token
     await SecureStorageAdapter.removeItem('token');
     return null;

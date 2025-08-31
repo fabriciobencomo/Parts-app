@@ -3,7 +3,8 @@ import React from 'react'
 import { Pressable } from 'react-native-gesture-handler'
 import { router } from 'expo-router'
 import { Product } from '@/core/products/interfaces/product.interface'
-import { getFirstValidImage } from '@/helpers/image-utils';
+import { getFirstValidImage } from '@/helpers/image-utils'
+import FavoriteButton from '@/presentation/favorites/components/FavoriteButton'
 
 interface Props {
   part: Product;
@@ -13,7 +14,17 @@ const PartCard = ({ part }: Props) => {
   return (
     <Pressable onPress={() => router.push({ pathname: '/(parts-app)/(tabs)/(stack)/part/[id]', params: { id: part.id } })}>
       <View style={styles.card}>
-        <Image source={{ uri: getFirstValidImage(part.images) }} style={styles.image} />
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: getFirstValidImage(part.images) }} style={styles.image} />
+          <View style={styles.favoriteButtonContainer}>
+            <FavoriteButton 
+              productId={part.id} 
+              size={20}
+              showFeedback={false}
+              style={styles.favoriteButton}
+            />
+          </View>
+        </View>
         <Text style={styles.name} numberOfLines={2}>{part.name}</Text>
         <Text style={styles.price}>${part.price % 1 === 0 ? part.price : part.price.toFixed(2)}</Text>
         <Text style={styles.model}>{part.model}</Text>
@@ -40,12 +51,29 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 8,
+  },
   image: {
     width: 90,
     height: 90,
     borderRadius: 8,
-    marginBottom: 8,
     backgroundColor: '#F4F4F4',
+  },
+  favoriteButtonContainer: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+  },
+  favoriteButton: {
+    padding: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
   },
   name: {
     fontWeight: '500',

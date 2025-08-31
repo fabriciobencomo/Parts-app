@@ -92,8 +92,6 @@ export default function TabLayout() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            router.dismissAll();  // Clear all navigation history
-            router.replace('/auth/welcome');
           }
         }
       ]

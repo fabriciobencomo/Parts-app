@@ -12,15 +12,19 @@ export function useNavigationGuard() {
   const segments = useSegments();
 
   useEffect(() => {
+    const isInAuthGroup = segments[0] === 'auth';
+    const isInMainApp = segments[0] === '(parts-app)';
+    
     // If user is authenticated and trying to access auth pages
-    if (status === 'authenticated') {
-      const isInAuthGroup = segments[0] === 'auth';
-      
-      if (isInAuthGroup) {
-        // User is authenticated but in auth pages, redirect to home
-        console.log('🚫 Authenticated user detected in auth pages, redirecting to home');
-        router.replace('/(parts-app)/(tabs)/(stack)/home');
-      }
+    if (status === 'authenticated' && isInAuthGroup) {
+      // User is authenticated but in auth pages, redirect to home
+      router.replace('/(parts-app)');
+    }
+    
+    // If user is unauthenticated and trying to access main app
+    if (status === 'unauthenticated' && isInMainApp) {
+      // User is not authenticated but in main app, redirect to auth
+      router.replace('/auth/welcome');
     }
   }, [status, segments]);
 

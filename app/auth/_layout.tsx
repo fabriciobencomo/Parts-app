@@ -7,7 +7,7 @@ export default function AuthLayout() {
 
   // If user is authenticated, redirect to main app
   if (status === 'authenticated') {
-    return <Redirect href="/(parts-app)/(tabs)/(stack)/home" />;
+    return <Redirect href="/(parts-app)" />;
   }
 
   return (

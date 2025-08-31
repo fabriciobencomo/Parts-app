@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '../../../../../constants/Colors';
 import { getValidImages } from '@/helpers/image-utils';
+import FavoriteButton from '@/presentation/favorites/components/FavoriteButton';
 
 const PartScreen = () => {
   const params = useLocalSearchParams();
@@ -54,9 +55,12 @@ const PartScreen = () => {
           <Ionicons name='arrow-back' size={24} color='#001845' />
         </Pressable>
         {/* Favorite Button */}
-        <Pressable style={styles.favoriteButton}>
-          <Ionicons name='heart-outline' size={24} color='#6B7280' />
-        </Pressable>
+        <FavoriteButton 
+          productId={productId} 
+          size={24}
+          style={styles.favoriteButton}
+          showFeedback={true}
+        />
       </View>
       {/* Product Images Carousel */}
       <View style={styles.imageContainer}>
