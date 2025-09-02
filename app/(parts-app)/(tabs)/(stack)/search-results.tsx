@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useProducts } from '@/presentation/products/hooks/useProducts';
+import { useSearch, useSearchSuggestions } from '@/presentation/products/hooks/useSearch';
 import { Product } from '@/core/products/interfaces/product.interface';
 import { LinearGradient } from 'expo-linear-gradient';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
@@ -26,34 +26,33 @@ const SearchResultsScreen = () => {
   const { query: initialQuery } = useLocalSearchParams<{ query: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { productsQuery } = useProducts();
   const [searchTerm, setSearchTerm] = useState(initialQuery || '');
   const [overlayVisible, setOverlayVisible] = useState(false);
+  
+  // Usar el hook de búsqueda
+  const { 
+    results: searchResults, 
+    isLoading: searchLoading, 
+    error: searchError,
+    isUsingLocalSearch 
+  } = useSearch(searchTerm, true);
 
-  // Procesar productos
-  const allProducts = React.useMemo(() => {
-    if (!productsQuery.data) return [];
-    if ('pages' in productsQuery.data) {
-      return productsQuery.data.pages.flat();
-    }
-    return Array.isArray(productsQuery.data) ? productsQuery.data : [];
-  }, [productsQuery.data]);
+  // Usar sugerencias para el overlay
+  const { 
+    suggestions, 
+    isLoading: suggestionsLoading 
+  } = useSearchSuggestions(searchTerm, overlayVisible);
 
-  // Filtrar productos en tiempo real
-  const filteredProducts = React.useMemo(() => {
-    const search = searchTerm.toLowerCase().trim();
-    if (!search) return allProducts;
-    
-    return allProducts.filter(product => {
-      const name = product.name.toLowerCase();
-      const category = (product.category?.name || '').toLowerCase();
-      const brand = (product.brand?.name || '').toLowerCase();
-      
-      return name.includes(search) || 
-             category.includes(search) || 
-             brand.includes(search);
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 SearchResults - Estado:', {
+      searchTerm,
+      resultsCount: searchResults?.length || 0,
+      isUsingLocalSearch,
+      searchLoading,
+      hasError: !!searchError
     });
-  }, [searchTerm, allProducts]);
+  }, [searchTerm, searchResults, isUsingLocalSearch, searchLoading, searchError]);
 
   // Manejar cambios en la búsqueda
   const onSearchChange = useCallback((text: string) => {
@@ -83,7 +82,7 @@ const SearchResultsScreen = () => {
           {item.name}
         </Text>
         <Text style={styles.productBrand}>{item.brand.name}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.productPrice}>${(item.price || 0).toFixed(2)}</Text>
         <View style={styles.stockInfo}>
           <Text style={styles.stockText}>
             {item.stock > 0 ? `${item.stock} disponibles` : 'Sin stock'}
@@ -104,11 +103,13 @@ const SearchResultsScreen = () => {
     </View>
   );
 
-  if (productsQuery.isLoading) {
+  if (searchLoading && !(searchResults?.length)) {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color="#1976D2" />
-        <Text style={styles.loadingText}>Cargando productos...</Text>
+        <Text style={styles.loadingText}>
+          {isUsingLocalSearch ? 'Buscando localmente...' : 'Buscando productos...'}
+        </Text>
       </View>
     );
   }
@@ -144,12 +145,22 @@ const SearchResultsScreen = () => {
 
       <View style={styles.resultsInfo}>
         <Text style={styles.resultsCount}>
-          {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+          {searchResults?.length || 0} producto{(searchResults?.length || 0) !== 1 ? 's' : ''} encontrado{(searchResults?.length || 0) !== 1 ? 's' : ''}
         </Text>
+        {isUsingLocalSearch && (
+          <Text style={styles.localSearchIndicator}>
+            🔍 Búsqueda local activa
+          </Text>
+        )}
+        {searchError && (
+          <Text style={styles.errorText}>
+            ⚠️ Error en búsqueda del servidor
+          </Text>
+        )}
       </View>
 
       <FlatList
-        data={filteredProducts}
+        data={searchResults || []}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
@@ -160,6 +171,11 @@ const SearchResultsScreen = () => {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
+        refreshing={searchLoading}
+        onRefresh={() => {
+          console.log('🔄 Refrescando búsqueda...');
+          // La búsqueda se actualiza automáticamente cuando cambia searchTerm
+        }}
       />
     </View>
   );
@@ -216,6 +232,17 @@ const styles = StyleSheet.create({
   resultsCount: {
     fontSize: 14,
     color: '#666',
+  },
+  localSearchIndicator: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginTop: 4,
   },
   listContainer: {
     padding: 16,

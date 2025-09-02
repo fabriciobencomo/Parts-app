@@ -26,7 +26,7 @@ const PartCard = ({ part }: Props) => {
           </View>
         </View>
         <Text style={styles.name} numberOfLines={2}>{part.name}</Text>
-        <Text style={styles.price}>${part.price % 1 === 0 ? part.price : part.price.toFixed(2)}</Text>
+        <Text style={styles.price}>${(part.price || 0) % 1 === 0 ? (part.price || 0) : (part.price || 0).toFixed(2)}</Text>
         <Text style={styles.model}>{part.model}</Text>
         <Text style={styles.brand}>{part.brand?.name}</Text>
       </View>

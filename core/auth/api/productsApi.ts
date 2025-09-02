@@ -28,9 +28,15 @@ const productsApi = axios.create({
 productsApi.interceptors.request.use(async(config) => {
   
   const token = await SecureStorageAdapter.getItem('token')
+  const sessionId = await SecureStorageAdapter.getItem('sessionId')
 
   if(token){
     config.headers.Authorization = 'Bearer ' + token
+  }
+
+  if(sessionId){
+    config.headers['X-Session-Id'] = sessionId
+    console.log('📤 Enviando Session ID en request:', sessionId)
   }
 
   return config

@@ -8,6 +8,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { Colors } from '../../../../../constants/Colors';
 import { getValidImages } from '@/helpers/image-utils';
 import FavoriteButton from '@/presentation/favorites/components/FavoriteButton';
+import AddToCartButton from '@/presentation/cart/components/AddToCartButton';
 
 const PartScreen = () => {
   const params = useLocalSearchParams();
@@ -160,16 +161,18 @@ const PartScreen = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
-          <Pressable 
-            style={styles.cartButton}
-            onPress={() => {
-              // TODO: Implementar lógica de agregar al carrito
-              console.log('Agregar al carrito:', { productId: part?.id, quantity });
-            }}
-          >
-            <Ionicons name='cart-outline' size={18} color={primaryColor} style={{marginRight: 10}} />
-            <Text style={styles.cartButtonText}>Agregar</Text>
-          </Pressable>
+          {part && (
+            <AddToCartButton
+              productId={part.id}
+              quantity={quantity}
+              style={styles.cartButton}
+              variant="outline"
+              size="medium"
+              onSuccess={() => {
+                // Opcional: Hacer algo después de agregar exitosamente
+              }}
+            />
+          )}
           <Pressable 
             style={styles.buyButton}
             onPress={() => {

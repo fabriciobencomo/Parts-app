@@ -48,6 +48,7 @@ const getUserByIdInternal = async (id: string) => {
 
 export interface AuthResponse {
   access_token: string;
+  sessionId?: string; // ← Añadir sessionId opcional
   user?: {
     id: string;
     email: string;
@@ -66,7 +67,17 @@ const returnUserToken = async (
   user: User;
   token: string;
 } | null> => {
-  const { access_token, user: userData } = data;
+  const { access_token, sessionId, user: userData } = data;
+  
+  // Guardar sessionId si viene en la respuesta
+  if (sessionId) {
+    try {
+      await SecureStorageAdapter.setItem('sessionId', sessionId);
+      console.log('✅ Session ID guardado:', sessionId);
+    } catch (error) {
+      console.log('❌ Error guardando session ID:', error);
+    }
+  }
 
   let userId: string = '';
 
@@ -240,6 +251,26 @@ export interface RegisterData {
   email: string;
   password: string;
 }
+
+// Función para obtener session ID actual
+export const getCurrentSessionId = async (): Promise<string | null> => {
+  try {
+    return await SecureStorageAdapter.getItem('sessionId');
+  } catch (error) {
+    console.log('Error obteniendo session ID:', error);
+    return null;
+  }
+};
+
+// Función para limpiar session ID
+export const clearSessionId = async (): Promise<void> => {
+  try {
+    await SecureStorageAdapter.removeItem('sessionId');
+    console.log('Session ID limpiado');
+  } catch (error) {
+    console.log('Error limpiando session ID:', error);
+  }
+};
 
 // User registration using POST /user endpoint
 export const authRegister = async (registerData: RegisterData) => {

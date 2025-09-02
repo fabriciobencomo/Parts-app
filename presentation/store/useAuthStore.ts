@@ -130,6 +130,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   logout: async () => {
     SecureStorageAdapter.removeItem('token');
+    SecureStorageAdapter.removeItem('sessionId'); // ← Limpiar session ID también
 
     set({ status: 'unauthenticated', token: undefined, user: undefined });
   },

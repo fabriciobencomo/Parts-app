@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Tabs, useSegments } from 'expo-router';
 import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
-import { useProducts } from '@/presentation/products/hooks/useProducts';
+import { useSearchSuggestions } from '@/presentation/products/hooks/useSearch';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
 import SearchOverlay from '@/presentation/shared/components/SearchOverlay';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,12 +11,45 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/core/products/interfaces/product.interface';
 import { useAuthStore } from '@/presentation/store/useAuthStore';
+import { useCartCount } from '@/presentation/cart/hooks/useCart';
+
+// Componente para el ícono del carrito con badge
+const CartIcon = ({ color }: { color: string }) => {
+  const { count } = useCartCount();
+  
+  return (
+    <View style={{ position: 'relative' }}>
+      <Ionicons size={20} name="cart-outline" color={color} />
+      {count > 0 && (
+        <View style={{
+          position: 'absolute',
+          top: -6,
+          right: -6,
+          backgroundColor: '#EF4444',
+          borderRadius: 10,
+          minWidth: 16,
+          height: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingHorizontal: 4,
+        }}>
+          <Text style={{
+            color: 'white',
+            fontSize: 10,
+            fontWeight: '600',
+            textAlign: 'center',
+          }}>
+            {count > 99 ? '99+' : count}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 export default function TabLayout() {
   const backgroundColor = useThemeColor({}, 'primary');
   const safeArea = useSafeAreaInsets();
-  const { productsQuery } = useProducts();
-  const products = productsQuery.data || [];
   const segments = useSegments() as string[];
   const { logout, user } = useAuthStore();
 
@@ -26,18 +59,8 @@ export default function TabLayout() {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Resultados filtrados para el overlay
-  const results = useMemo(() => {
-    if (!search.trim()) return [];
-    if (!overlayVisible) return []; // No mostrar resultados si el overlay no está visible
-    
-    const searchTerm = search.trim().toLowerCase();
-    return (Array.isArray(products) ? products : []).filter(part =>
-      part.name.toLowerCase().includes(searchTerm) ||
-      part.category.name.toLowerCase().includes(searchTerm) ||
-      part.brand.name.toLowerCase().includes(searchTerm)
-    ).slice(0, 5); // Mostrar solo los primeros 5 resultados en el overlay
-  }, [search, products, overlayVisible]);
+  // Usar sugerencias del backend
+  const { suggestions = [], isLoading: suggestionsLoading } = useSearchSuggestions(search, overlayVisible);
 
   const handleResultPress = (part: Product) => {
     setSearch('');
@@ -152,7 +175,7 @@ export default function TabLayout() {
         value={search}
         onChangeText={text => setSearch(text)}
         onCancel={handleCancel}
-        results={results}
+        results={suggestions}
         onResultPress={handleResultPress}
         onSubmit={handleSearchSubmit}
       />
@@ -182,8 +205,8 @@ export default function TabLayout() {
           <Tabs.Screen
             name="shop/index"
             options={{
-              title: 'Pedidos',
-              tabBarIcon: ({ color }) => <Ionicons size={20} name="cart-outline" color={color} />,
+              title: 'Carrito',
+              tabBarIcon: ({ color }) => <CartIcon color={color} />,
             }}
           />
         </Tabs>
