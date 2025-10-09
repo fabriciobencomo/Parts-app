@@ -164,34 +164,68 @@ export const useFavoritesStore = create<FavoritesState>()((set, get) => ({
     }
   },
 
-  // Toggle favorite status
+  // Toggle favorite status with optimistic updates
   toggleProductFavorite: async (productId: string) => {
-    set({ loading: true, error: null });
+    const currentStatus = get().favoriteStatus[productId] || false;
+    const newStatus = !currentStatus;
+    
+    // Optimistic update - update UI immediately
+    get().updateFavoriteStatus(productId, newStatus);
+    
+    const currentFavorites = get().favorites;
+    let optimisticFavorites = currentFavorites;
+    
+    if (newStatus) {
+      // Adding to favorites - create temporary favorite object
+      const tempFavorite: Favorite = {
+        id: `temp-${productId}`,
+        userId: 'current-user',
+        productId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      optimisticFavorites = [tempFavorite, ...currentFavorites];
+    } else {
+      // Removing from favorites
+      optimisticFavorites = currentFavorites.filter(fav => fav.productId !== productId);
+    }
+    
+    set({ 
+      favorites: optimisticFavorites,
+      favoriteCount: optimisticFavorites.length,
+      loading: true,
+      error: null 
+    });
     
     try {
-      const result = await toggleFavorite(productId);
+      // Use direct API calls instead of toggleFavorite to avoid double checking
+      let result: { isFavorite: boolean; message: string };
       
-      if (result.isFavorite) {
-        // Product was added to favorites
-        await get().loadFavorites(); // Reload to get complete data
+      if (newStatus) {
+        const favorite = await addToFavorites(productId);
+        if (favorite) {
+          // Replace temp favorite with real one
+          const realFavorites = optimisticFavorites.map(fav => 
+            fav.id === `temp-${productId}` ? favorite : fav
+          );
+          set({ favorites: realFavorites });
+        }
+        result = { isFavorite: true, message: 'Producto agregado a favoritos' };
       } else {
-        // Product was removed from favorites
-        const currentFavorites = get().favorites;
-        const updatedFavorites = currentFavorites.filter(fav => fav.productId !== productId);
-        
-        set({ 
-          favorites: updatedFavorites,
-          favoriteCount: updatedFavorites.length
-        });
+        await removeFromFavorites(productId);
+        result = { isFavorite: false, message: 'Producto removido de favoritos' };
       }
       
-      get().updateFavoriteStatus(productId, result.isFavorite);
       set({ loading: false });
-      
       return result;
     } catch (error: any) {
       console.error('Error toggling favorite:', error);
+      
+      // Revert optimistic update on error
+      get().updateFavoriteStatus(productId, currentStatus);
       set({ 
+        favorites: currentFavorites,
+        favoriteCount: currentFavorites.length,
         error: error.message || 'Error al cambiar estado de favorito', 
         loading: false 
       });

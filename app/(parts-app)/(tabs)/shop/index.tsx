@@ -14,20 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCart, useCartItem, useCheckout } from '@/presentation/cart/hooks/useCart';
 import { CartItem } from '@/core/cart/interfaces/cart.interface';
-import CartDebug from '@/presentation/cart/components/CartDebug';
 
 const CartItemComponent = ({ item }: { item: CartItem }) => {
   const { updateQuantity, remove, loading } = useCartItem(item.id);
-
-  // Debug: Log item data
-  console.log('🛒 CartItemComponent recibió:', {
-    id: item.id,
-    productId: item.productId,
-    quantity: item.quantity,
-    price: item.price,
-    productName: item.product?.name,
-    hasProduct: !!item.product
-  });
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -125,19 +114,6 @@ const ShopScreen = () => {
     isAuthenticated 
   } = useCart();
 
-  // Debug: Log cart state when it changes
-  React.useEffect(() => {
-    console.log('🛒 ShopScreen - Cart state changed:', {
-      hasCart: !!cart,
-      itemCount,
-      total,
-      itemsWithPrice: cart?.items?.filter(item => item.price && item.price > 0).length || 0,
-      totalItems: cart?.items?.length || 0
-    });
-  }, [cart, itemCount, total]);
-
-  const { checkout, canCheckout, loading: checkoutLoading } = useCheckout();
-
   const handleClearCart = () => {
     Alert.alert(
       'Limpiar Carrito',
@@ -158,13 +134,12 @@ const ShopScreen = () => {
     );
   };
 
-  const handleCheckout = async () => {
-    try {
-      await checkout();
-      Alert.alert('¡Compra Exitosa!', 'Tu pedido ha sido procesado correctamente');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Error al procesar la compra');
+  const handleCheckout = () => {
+    if (itemCount === 0) {
+      Alert.alert('Carrito vacío', 'Agrega productos antes de proceder al checkout');
+      return;
     }
+    router.push('/(parts-app)/(tabs)/(stack)/checkout');
   };
 
   if (!isAuthenticated) {
@@ -256,24 +231,15 @@ const ShopScreen = () => {
         <TouchableOpacity
           style={[
             styles.checkoutButton,
-            (!canCheckout || checkoutLoading) && styles.checkoutButtonDisabled
+            itemCount === 0 && styles.checkoutButtonDisabled
           ]}
           onPress={handleCheckout}
-          disabled={!canCheckout || checkoutLoading}
+          disabled={itemCount === 0}
         >
-          {checkoutLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <Ionicons name="card-outline" size={18} color="#FFFFFF" style={styles.checkoutIcon} />
-              <Text style={styles.checkoutButtonText}>Proceder al Pago</Text>
-            </>
-          )}
+          <Ionicons name="card-outline" size={18} color="#FFFFFF" style={styles.checkoutIcon} />
+          <Text style={styles.checkoutButtonText}>Proceder al Pago</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Debug component - solo en desarrollo */}
-      <CartDebug />
     </View>
   );
 };

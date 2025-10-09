@@ -12,6 +12,8 @@ import {
   isProductInCart,
   getProductQuantityInCart,
 } from '@/core/cart/actions/cart-actions';
+import { createOrderWithDetails, type CreateOrderDto } from '@/core/orders/actions/order-actions';
+import { useAuthStore } from '@/presentation/store/useAuthStore';
 import { validateAndRepairCart } from '@/core/cart/actions/cart-helpers';
 
 export interface CartState {
@@ -31,6 +33,7 @@ export interface CartState {
   removeItem: (itemId: string) => Promise<boolean>;
   clearCart: () => Promise<boolean>;
   checkout: () => Promise<any>;
+  createOrder: (orderData: Partial<CreateOrderDto>) => Promise<any>;
   
   // Utilidades
   isProductInCart: (productId: string) => boolean;
@@ -312,7 +315,7 @@ export const useCartStore = create<CartState>()((set, get) => ({
     }
   },
 
-  // Procesar checkout
+  // Procesar checkout (método anterior - mantener por compatibilidad)
   checkout: async () => {
     set({ loading: true, error: null });
     
@@ -330,6 +333,80 @@ export const useCartStore = create<CartState>()((set, get) => ({
       return result;
     } catch (error: any) {
       console.error('Error en checkout:', error);
+      set({ 
+        error: error.message, 
+        loading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Crear orden desde carrito (nuevo método usando endpoints de órdenes)
+  createOrder: async (orderData: Partial<CreateOrderDto>) => {
+    const { cart } = get();
+    
+    if (!cart || !cart.items || cart.items.length === 0) {
+      throw new Error('El carrito está vacío');
+    }
+
+    set({ loading: true, error: null });
+    
+    try {
+      // Obtener usuario actual para customerId
+      const { user } = useAuthStore.getState();
+      if (!user?.id) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // Calcular totales del carrito
+      const subtotal = getCartTotal(cart);
+      const shipping = 2.5; // Precio fijo de envío
+      const discount = orderData.discount || 0;
+      const total = subtotal + shipping - discount;
+
+      // Convertir items del carrito a orderDetails
+      const orderDetails = cart.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.price
+      }));
+
+      // Crear la orden completa
+      const orderPayload: CreateOrderDto = {
+        customerId: user.id, // Usar ID del usuario autenticado
+        status: orderData.status || 'pendiente',
+        subtotal: Number(subtotal.toFixed(2)),
+        taxes: Number(shipping.toFixed(2)), // Usar shipping en lugar de taxes
+        discount: Number(discount.toFixed(2)),
+        total: Number(total.toFixed(2)),
+        paymentMethod: orderData.paymentMethod,
+        shippingAddress: orderData.shippingAddress,
+        notes: orderData.notes,
+        deliveryDate: orderData.deliveryDate || new Date().toISOString(),
+        orderDetails
+      };
+
+      console.log('🛒 Creando orden desde carrito:', orderPayload);
+
+      const result = await createOrderWithDetails(orderPayload, user.name);
+      
+      if (result.success) {
+        // Limpiar carrito después de crear la orden exitosamente
+        // El stock ya fue reducido automáticamente en el backend
+        await get().clearCart();
+        
+        set({ loading: false });
+        return result;
+      } else {
+        const errorMessage = result.error?.message || 'Error creando la orden';
+        set({ 
+          error: errorMessage,
+          loading: false 
+        });
+        throw new Error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Error creando orden desde carrito:', error);
       set({ 
         error: error.message, 
         loading: false 

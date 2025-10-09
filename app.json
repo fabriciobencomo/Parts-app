@@ -15,12 +15,21 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "extra": {
+      "EXPO_PUBLIC_MAPTILER_KEY": "YOUR_MAPTILER_KEY_HERE",
+      "EXPO_PUBLIC_TELEGRAM_BOT_TOKEN": "YOUR_TELEGRAM_BOT_TOKEN_HERE",
+      "EXPO_PUBLIC_TELEGRAM_CHAT_ID": "YOUR_TELEGRAM_CHAT_ID_HERE"
     },
     "plugins": [
       "expo-router",
@@ -32,7 +41,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

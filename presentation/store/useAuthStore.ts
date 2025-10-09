@@ -8,6 +8,8 @@ import {
   authRegister, 
   getUserById,
   updateUser,
+  sendSMSCode,
+  verifySMSCode,
   type RegisterData,
   type UpdateUserData 
 } from '@/core/auth/actions/auth-actions';
@@ -25,7 +27,10 @@ export interface AuthState {
   checkStatus: () => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updateData: UpdateUserData) => Promise<boolean>;
+  updateUserData: (user: User) => void;
   refreshUserData: () => Promise<void>;
+  sendSMSCode: (phone: string) => Promise<{ success: boolean; error?: any; data?: { success: boolean; message: string; phone: string } }>;
+  verifySMSCode: (phone: string, code: string) => Promise<{ valid: boolean; message: string }>;
 
   changeStatus: (token?: string, user?: User) => Promise<boolean>;
 }
@@ -100,6 +105,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     return false;
   },
 
+  updateUserData: (user: User) => {
+    set({ user });
+  },
+
   refreshUserData: async () => {
     const { user: currentUser, token } = get();
     
@@ -133,5 +142,23 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     SecureStorageAdapter.removeItem('sessionId'); // ← Limpiar session ID también
 
     set({ status: 'unauthenticated', token: undefined, user: undefined });
+  },
+
+  sendSMSCode: async (phone: string) => {
+    try {
+      return await sendSMSCode(phone);
+    } catch (error) {
+      console.error('Error in sendSMSCode:', error);
+      return { success: false, error: { message: 'Error inesperado', statusCode: 500 } };
+    }
+  },
+
+  verifySMSCode: async (phone: string, code: string) => {
+    try {
+      return await verifySMSCode(phone, code);
+    } catch (error) {
+      console.error('Error in verifySMSCode:', error);
+      return { valid: false, message: 'Error inesperado' };
+    }
   },
 }));

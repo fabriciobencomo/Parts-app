@@ -15,9 +15,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSearch, useSearchSuggestions } from '@/presentation/products/hooks/useSearch';
+import { useFilters } from '@/presentation/products/hooks/useFilters';
 import { Product } from '@/core/products/interfaces/product.interface';
 import { LinearGradient } from 'expo-linear-gradient';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
+import FilterModal from '@/presentation/shared/components/FilterModal';
 import { getFirstValidImage } from '@/helpers/image-utils';
 
 const ITEMS_PER_PAGE = 10;
@@ -28,13 +30,16 @@ const SearchResultsScreen = () => {
   const insets = useSafeAreaInsets();
   const [searchTerm, setSearchTerm] = useState(initialQuery || '');
   const [overlayVisible, setOverlayVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   
   // Usar el hook de búsqueda
   const { 
     results: searchResults, 
     isLoading: searchLoading, 
     error: searchError,
-    isUsingLocalSearch 
+    isUsingLocalSearch,
+    isTyping,
+    debouncedQuery 
   } = useSearch(searchTerm, true);
 
   // Usar sugerencias para el overlay
@@ -43,20 +48,36 @@ const SearchResultsScreen = () => {
     isLoading: suggestionsLoading 
   } = useSearchSuggestions(searchTerm, overlayVisible);
 
-  // Debug logging
+  // Usar filtros
+  const {
+    availableBrands,
+    availableCategories,
+    priceRange,
+    filters,
+    hasActiveFilters,
+    filteredProducts,
+    applyFilters,
+    clearFilters,
+    loading: filtersLoading
+  } = useFilters(searchResults || []);
+
+  // Use filtered products instead of raw search results
+  const displayProducts = filteredProducts;
+
+  // Debug logging - solo cuando hay cambios importantes
   useEffect(() => {
-    console.log('🔍 SearchResults - Estado:', {
-      searchTerm,
-      resultsCount: searchResults?.length || 0,
-      isUsingLocalSearch,
-      searchLoading,
-      hasError: !!searchError
-    });
-  }, [searchTerm, searchResults, isUsingLocalSearch, searchLoading, searchError]);
+    if (!isTyping && debouncedQuery) {
+      console.log('🔍 SearchResults - Búsqueda completada:', {
+        debouncedQuery,
+        resultsCount: searchResults?.length || 0,
+        isUsingLocalSearch,
+        searchLoading
+      });
+    }
+  }, [debouncedQuery, searchResults, isUsingLocalSearch, searchLoading, isTyping]);
 
   // Manejar cambios en la búsqueda
   const onSearchChange = useCallback((text: string) => {
-    console.log('Search changed to:', text);
     setSearchTerm(text);
   }, []);
 
@@ -103,16 +124,17 @@ const SearchResultsScreen = () => {
     </View>
   );
 
-  if (searchLoading && !(searchResults?.length)) {
-    return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#1976D2" />
-        <Text style={styles.loadingText}>
-          {isUsingLocalSearch ? 'Buscando localmente...' : 'Buscando productos...'}
-        </Text>
-      </View>
-    );
-  }
+  // Render loading state en el área de contenido
+  const renderContentLoading = () => (
+    <View style={styles.contentLoadingContainer}>
+      <ActivityIndicator size="large" color="#1976D2" />
+      <Text style={styles.contentLoadingText}>
+        {isUsingLocalSearch ? 'Buscando localmente...' : 'Buscando productos...'}
+      </Text>
+    </View>
+  );
+
+  // Renderizar el loading en el área de contenido, no como pantalla completa
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
@@ -120,7 +142,7 @@ const SearchResultsScreen = () => {
         colors={["#0A2E73", "#1976D2"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 8 }]}
+        style={[styles.header, { paddingTop: insets.top + 16 }]}
       >
         <View style={styles.headerRow}>
           <TouchableOpacity
@@ -136,46 +158,103 @@ const SearchResultsScreen = () => {
               onChangeText={setSearchTerm}
               results={[]}
               disableNavigation={true}
-              rounded={false}
+              rounded={true}
               onFocus={() => setOverlayVisible(true)}
             />
           </View>
+          <TouchableOpacity
+            style={[styles.filterButton, hasActiveFilters && styles.filterButtonActive]}
+            onPress={() => setFilterModalVisible(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons 
+              name="filter" 
+              size={20} 
+              color={hasActiveFilters ? "#1976D2" : "#fff"} 
+            />
+            {hasActiveFilters && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>
+                  {filters.brands.length + filters.categories.length + 
+                   (filters.inStockOnly ? 1 : 0) + 
+                   (filters.priceRange.min !== priceRange.min || filters.priceRange.max !== priceRange.max ? 1 : 0)}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
       <View style={styles.resultsInfo}>
-        <Text style={styles.resultsCount}>
-          {searchResults?.length || 0} producto{(searchResults?.length || 0) !== 1 ? 's' : ''} encontrado{(searchResults?.length || 0) !== 1 ? 's' : ''}
-        </Text>
-        {isUsingLocalSearch && (
-          <Text style={styles.localSearchIndicator}>
-            🔍 Búsqueda local activa
+        {isTyping ? (
+          <Text style={styles.typingIndicator}>
+            ✏️ Escribiendo... (buscará "{searchTerm}")
           </Text>
-        )}
-        {searchError && (
-          <Text style={styles.errorText}>
-            ⚠️ Error en búsqueda del servidor
-          </Text>
+        ) : (
+          <>
+            <View style={styles.resultsRow}>
+              <Text style={styles.resultsCount}>
+                {displayProducts?.length || 0} producto{(displayProducts?.length || 0) !== 1 ? 's' : ''} 
+                {hasActiveFilters ? ' filtrados' : ' encontrados'} 
+                {searchResults && displayProducts && searchResults.length !== displayProducts.length 
+                  ? ` de ${searchResults.length}` 
+                  : ''} para "{debouncedQuery}"
+              </Text>
+              {searchLoading && (searchResults?.length || 0) > 0 && (
+                <ActivityIndicator size="small" color="#1976D2" style={styles.smallLoadingIndicator} />
+              )}
+            </View>
+            {hasActiveFilters && (
+              <TouchableOpacity onPress={clearFilters} style={styles.clearFiltersButton}>
+                <Text style={styles.clearFiltersText}>Limpiar filtros</Text>
+              </TouchableOpacity>
+            )}
+            {isUsingLocalSearch && (
+              <Text style={styles.localSearchIndicator}>
+                🔍 Búsqueda local activa (endpoint público no disponible)
+              </Text>
+            )}
+            {searchError && !isUsingLocalSearch && (
+              <Text style={styles.errorText}>
+                ⚠️ Error del endpoint público - Reintentando...
+              </Text>
+            )}
+          </>
         )}
       </View>
 
       <FlatList
-        data={searchResults || []}
+        data={displayProducts || []}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={renderEmpty}
+        ListEmptyComponent={
+          // Mostrar loading solo cuando está buscando y no hay resultados previos
+          searchLoading && !isTyping && !(searchResults?.length) 
+            ? renderContentLoading 
+            : renderEmpty
+        }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         removeClippedSubviews={false}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
-        refreshing={searchLoading}
+        refreshing={false}
         onRefresh={() => {
-          console.log('🔄 Refrescando búsqueda...');
           // La búsqueda se actualiza automáticamente cuando cambia searchTerm
         }}
+      />
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApplyFilters={applyFilters}
+        availableBrands={availableBrands}
+        availableCategories={availableCategories}
+        priceRange={priceRange}
+        currentFilters={filters}
       />
     </View>
   );
@@ -185,8 +264,8 @@ export default SearchResultsScreen;
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
@@ -229,9 +308,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
+  resultsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   resultsCount: {
     fontSize: 14,
     color: '#666',
+    flex: 1,
+  },
+  smallLoadingIndicator: {
+    marginLeft: 8,
+  },
+  typingIndicator: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontStyle: 'italic',
   },
   localSearchIndicator: {
     fontSize: 12,
@@ -305,6 +398,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  contentLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    minHeight: 200,
+  },
+  contentLoadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#1976D2',
+    fontWeight: '500',
+  },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
@@ -325,16 +431,47 @@ const styles = StyleSheet.create({
   },
   searchBarWrapper: {
     flex: 1,
-    backgroundColor: 'white',
+    marginTop: 16,
     borderRadius: 16,
-    flexDirection: 'row',
+    overflow: 'hidden',
+    backgroundColor: 'white',
+  },
+  filterButton: {
+    marginLeft: 12,
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterButtonActive: {
+    backgroundColor: 'white',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF6B6B',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  clearFiltersButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    color: '#1976D2',
+    fontWeight: '500',
   },
 }); 

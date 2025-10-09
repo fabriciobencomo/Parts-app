@@ -10,8 +10,8 @@ export interface SearchProductsResponse {
 }
 
 /**
- * Buscar productos usando el endpoint del backend
- * GET /products/search?query={query}&page={page}&limit={limit}
+ * Buscar productos usando el endpoint público y filtrado local
+ * GET /products (endpoint público, no requiere autenticación)
  */
 export const searchProducts = async (
   query: string, 
@@ -19,45 +19,52 @@ export const searchProducts = async (
   limit: number = 20
 ): Promise<Product[]> => {
   try {
-    console.log('🔍 Buscando productos:', { query, page, limit });
-
     if (!query.trim()) {
-      console.log('⚠️ Query vacío, retornando array vacío');
       return [];
     }
 
-    const { data } = await productsApi.get<SearchProductsResponse>('/products/search', {
-      params: {
-        query: query.trim(),
-        page,
-        limit
-      }
+    // Usar el endpoint público para obtener todos los productos
+    const { data } = await productsApi.get<Product[]>('/products');
+
+    // Filtrar productos localmente
+    const searchTerm = query.toLowerCase().trim();
+    const filteredProducts = (data || []).filter(product => {
+      const name = product.name.toLowerCase();
+      const category = (product.category?.name || '').toLowerCase();
+      const brand = (product.brand?.name || '').toLowerCase();
+      
+      return name.includes(searchTerm) || 
+             category.includes(searchTerm) || 
+             brand.includes(searchTerm);
     });
 
-    console.log('✅ Productos encontrados:', {
-      count: data.products?.length || 0,
-      total: data.total,
-      page: data.page,
-      totalPages: data.totalPages
-    });
+    // Aplicar paginación local
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginatedResults = filteredProducts.slice(start, end);
 
-    return data.products || [];
+    // Solo log para primera página con resultados
+    if (page === 1 && paginatedResults.length > 0) {
+      console.log(`🔍 Búsqueda: "${query}" encontró ${filteredProducts.length} productos`);
+    }
+
+    return paginatedResults;
   } catch (error: any) {
-    console.error('❌ Error buscando productos:', error?.response?.data || error?.message);
+    console.error('❌ Error obteniendo productos:', error?.response?.data || error?.message);
     
-    // Si el endpoint no existe o hay error, intentar búsqueda local como fallback
-    if (error?.response?.status === 404 || error?.response?.status === 501) {
-      console.log('📄 Endpoint de búsqueda no disponible, usando búsqueda local');
+    // Si hay error, lanzar excepción para que use el fallback local
+    if (error?.response?.status === 404 || error?.response?.status === 501 || error?.response?.status === 500) {
+      console.log('📄 Endpoint público no disponible (status: ' + error?.response?.status + '), usando búsqueda local');
       throw new Error('SEARCH_NOT_IMPLEMENTED');
     }
     
-    throw new Error('Error al buscar productos');
+    throw new Error('Error al obtener productos del servidor');
   }
 };
 
 /**
- * Obtener sugerencias de búsqueda (para autocompletar)
- * GET /products/suggestions?query={query}&limit={limit}
+ * Obtener sugerencias de búsqueda usando el endpoint público
+ * GET /products (endpoint público, filtrado local para sugerencias)
  */
 export const getSearchSuggestions = async (
   query: string,
@@ -68,23 +75,30 @@ export const getSearchSuggestions = async (
       return [];
     }
 
-    console.log('💡 Obteniendo sugerencias para:', query);
+    // Usar el endpoint público para obtener todos los productos
+    const { data } = await productsApi.get<Product[]>('/products');
 
-    const { data } = await productsApi.get<SearchProductsResponse>('/products/suggestions', {
-      params: {
-        query: query.trim(),
-        limit
-      }
-    });
+    // Filtrar productos para sugerencias
+    const searchTerm = query.toLowerCase().trim();
+    const suggestions = (data || [])
+      .filter(product => {
+        const name = product.name.toLowerCase();
+        const category = (product.category?.name || '').toLowerCase();
+        const brand = (product.brand?.name || '').toLowerCase();
+        
+        return name.includes(searchTerm) || 
+               category.includes(searchTerm) || 
+               brand.includes(searchTerm);
+      })
+      .slice(0, limit); // Limitar número de sugerencias
 
-    console.log('✅ Sugerencias encontradas:', data.products?.length || 0);
-    return data.products || [];
+    return suggestions;
   } catch (error: any) {
     console.error('❌ Error obteniendo sugerencias:', error?.response?.data || error?.message);
     
-    // Si no hay endpoint de sugerencias, retornar array vacío
-    if (error?.response?.status === 404 || error?.response?.status === 501) {
-      console.log('📄 Endpoint de sugerencias no disponible');
+    // Si hay error con el endpoint público, retornar array vacío para usar fallback local
+    if (error?.response?.status === 404 || error?.response?.status === 501 || error?.response?.status === 500) {
+      console.log('📄 Endpoint público no disponible para sugerencias (status: ' + error?.response?.status + ')');
       return [];
     }
     

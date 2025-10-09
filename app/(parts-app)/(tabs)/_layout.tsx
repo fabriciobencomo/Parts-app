@@ -1,13 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { Tabs, useSegments } from 'expo-router';
+import { Tabs, useSegments, router } from 'expo-router';
 import { Text, StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import { useSearchSuggestions } from '@/presentation/products/hooks/useSearch';
 import SearchComponent from '@/presentation/shared/components/SearchComponent';
 import SearchOverlay from '@/presentation/shared/components/SearchOverlay';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Product } from '@/core/products/interfaces/product.interface';
 import { useAuthStore } from '@/presentation/store/useAuthStore';
@@ -76,6 +75,8 @@ export default function TabLayout() {
   const isHomeTab = segments.includes('(stack)');
   // Detectar si estamos en la pantalla de resultados de búsqueda
   const isSearchResultsPage = segments.includes('search-results');
+  // Detectar si estamos en la pantalla de perfil
+  const isProfilePage = segments.includes('profile');
 
   const handleSearchSubmit = () => {
     if (search.trim()) {
@@ -121,10 +122,29 @@ export default function TabLayout() {
     );
   };
 
+  // Función para formatear el nombre del usuario
+  const formatUserName = (fullName?: string) => {
+    if (!fullName) return 'Usuario';
+    
+    // Tomar solo el primer nombre (antes del primer espacio)
+    const firstName = fullName.split(' ')[0];
+    
+    // Limitar a 15 caracteres
+    if (firstName.length > 15) {
+      return firstName.substring(0, 15) + '...';
+    }
+    
+    return firstName;
+  };
+
+  const handleProfilePress = () => {
+    router.push('/profile/' as any);
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F4F4F4' }}>
-      {/* Header global solo si NO estamos en la página de producto NI en la de resultados de búsqueda */}
-      {!isProductPage && !isSearchResultsPage && (
+      {/* Header global solo si NO estamos en la página de producto NI en la de resultados de búsqueda NI en perfil */}
+      {!isProductPage && !isSearchResultsPage && !isProfilePage && (
         isHomeTab ? (
           <LinearGradient
             colors={["#0A2E73", "#1976D2"]}
@@ -137,7 +157,10 @@ export default function TabLayout() {
             ]}
           >
             <View style={styles.headerTop}>
-              <Text style={styles.greeting}>Hola {user?.name || 'Usuario'}</Text>
+              <TouchableOpacity onPress={handleProfilePress} style={styles.greetingButton}>
+                <Text style={styles.greeting}>Hola {formatUserName(user?.name)}</Text>
+                <Ionicons name="chevron-forward" size={16} color="rgba(255, 255, 255, 0.8)" style={styles.greetingIcon} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                 <Ionicons name="exit-outline" size={24} color="white" />
               </TouchableOpacity>
@@ -180,7 +203,12 @@ export default function TabLayout() {
         onSubmit={handleSearchSubmit}
       />
       <View style={{ flex: 1 }}>
-        <Tabs screenOptions={{ tabBarActiveTintColor: backgroundColor, headerShown: false }}>
+        <Tabs 
+          screenOptions={{ 
+            tabBarActiveTintColor: backgroundColor || '#1976D2', 
+            headerShown: false 
+          }}
+        >
           <Tabs.Screen
             name="(stack)"
             options={{
@@ -193,6 +221,13 @@ export default function TabLayout() {
             options={{
               title: 'Categorias',
               tabBarIcon: ({ color }) => <Ionicons size={20} name="square-outline" color={color} />,
+            }}
+          />
+          <Tabs.Screen
+            name="orders/index"
+            options={{
+              title: 'Órdenes',
+              tabBarIcon: ({ color }) => <Ionicons size={20} name="receipt-outline" color={color} />,
             }}
           />
           <Tabs.Screen
@@ -228,10 +263,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  greetingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
   greeting: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+  },
+  greetingIcon: {
+    marginLeft: 4,
   },
   logoutButton: {
     padding: 8,

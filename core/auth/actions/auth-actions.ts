@@ -5,6 +5,7 @@ import { SecureStorageAdapter } from '@/helpers/adapters/secure-storage.adapter'
 // Simple JWT decoder (only for reading payload, not for security validation)
 const decodeJWT = (token: string) => {
   try {
+    if (!token || typeof token !== 'string') return null;
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -125,6 +126,8 @@ const returnUserToken = async (
       address: completeUserData.address || '',
       phoneNumber: completeUserData.phoneNumber || '',
       direction: completeUserData.direction || '',
+      latitude: completeUserData.latitude,
+      longitude: completeUserData.longitude,
       phoneVerificationCode: completeUserData.phoneVerificationCode,
       updatedAt: completeUserData.updatedAt ? new Date(completeUserData.updatedAt) : new Date(),
     };
@@ -216,6 +219,8 @@ export const authCheckStatus = async () => {
           address: userData.address || '',
           phoneNumber: userData.phoneNumber || '',
           direction: userData.direction || '',
+          latitude: userData.latitude,
+          longitude: userData.longitude,
           phoneVerificationCode: userData.phoneVerificationCode,
           updatedAt: userData.updatedAt ? new Date(userData.updatedAt) : new Date(),
         };
@@ -250,7 +255,14 @@ export interface RegisterData {
   phone: string;
   email: string;
   password: string;
+  phoneVerified?: boolean;
+  address?: string;
+  direction?: string;
 }
+
+// SMS DTOs
+export type SendCodeResponse = { success: boolean; message: string; phone: string };
+export type VerifyCodeResponse = { valid: boolean; message: string };
 
 // Función para obtener session ID actual
 export const getCurrentSessionId = async (): Promise<string | null> => {
@@ -272,16 +284,16 @@ export const clearSessionId = async (): Promise<void> => {
   }
 };
 
-// User registration using POST /user endpoint
+// User registration using POST /user endpoint (direct create)
 export const authRegister = async (registerData: RegisterData) => {
   try {
-    const { data } = await productsApi.post<AuthResponse>('/user', {
+    const { data } = await productsApi.post<any>('/user', {
       name: registerData.fullName,
       email: registerData.email.toLowerCase(),
       password: registerData.password,
       phoneNumber: registerData.phone,
-      direction: '123',
-      address: '123',
+      direction: registerData.direction || undefined,
+      address: registerData.address || undefined,
     });
 
     if (!data) {
@@ -289,11 +301,48 @@ export const authRegister = async (registerData: RegisterData) => {
       return null;
     }
 
-    if(data) {
-        console.log(data);
+    console.log('📝 Register API response:', data);
+
+    // If backend returns the auth payload directly
+    if (data && typeof data === 'object' && 'access_token' in data) {
+      return await returnUserToken(data as AuthResponse);
     }
 
-    return await returnUserToken(data);
+    // Some backends return just the created user; attempt automatic login to obtain token
+    if (data && typeof data === 'object' && 'id' in data) {
+      console.log('ℹ️ Register returned user object without token. Attempting auto-login...');
+      try {
+        const { data: loginData } = await productsApi.post<AuthResponse>('/auth/login', {
+          email: registerData.email.toLowerCase(),
+          password: registerData.password,
+        });
+
+        if (loginData?.access_token) {
+          // Pass along minimal user info if available
+          const minimalUser = {
+            id: data.id,
+            email: data.email,
+            name: data.name,
+            role: data.role,
+            isActive: data.isActive,
+            phoneVerified: data.phoneVerified,
+            avatar: data.avatar,
+            createdAt: data.createdAt,
+          } as AuthResponse['user'];
+
+          return await returnUserToken({ ...loginData, user: minimalUser });
+        }
+
+        console.log('❌ Auto-login did not return access_token');
+        return null;
+      } catch (loginError) {
+        console.log('❌ Auto-login after register failed:', loginError);
+        return null;
+      }
+    }
+
+    console.log('❌ Unexpected register response shape.');
+    return null;
   } catch (error) {
     console.log('Register error:', error);
     return null;
@@ -325,6 +374,8 @@ export interface UpdateUserData {
   phoneNumber?: string;
   address?: string;
   direction?: string;
+  latitude?: number;
+  longitude?: number;
   vehicleInfo?: string;
 }
 
@@ -348,5 +399,31 @@ export const toggleUserActive = async (id: string, isActive: boolean) => {
   } catch (error) {
     console.log(error);
     return null;
+  }
+};
+
+// Send SMS verification code
+export const sendSMSCode = async (phone: string): Promise<{ success: boolean; error?: any; data?: SendCodeResponse }> => {
+  try {
+    const { data } = await productsApi.post<SendCodeResponse>('/auth/send-sms-code', { phone });
+    return { success: true, data };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response?.data || { message: error.message, statusCode: error.response?.status },
+    };
+  }
+};
+
+// Verify SMS code
+export const verifySMSCode = async (phone: string, code: string): Promise<VerifyCodeResponse> => {
+  try {
+    const { data } = await productsApi.post<VerifyCodeResponse>('/auth/verify-sms-code', { phone, code });
+    return data;
+  } catch (error: any) {
+    return {
+      valid: false,
+      message: error.response?.data?.message || 'Error al verificar el código',
+    };
   }
 };

@@ -10,7 +10,7 @@ import { useAuthStore } from '@/presentation/store/useAuthStore';
 
 
 const LayoutScreen = () => {
-  const primaryColor = useThemeColor({} , 'primary')
+  const primaryColor = useThemeColor({} , 'primary') || '#1976D2'
   const { status } = useAuthStore()
 
   if (status !== 'authenticated') {
@@ -35,6 +35,14 @@ const LayoutScreen = () => {
         <Stack.Screen name="part/[id]" options={{
           title: 'Producto',
           gestureEnabled: true,   // Allow back from product detail
+        }} />
+        <Stack.Screen name="profile/index" options={{
+          title: 'Mi Perfil',
+          gestureEnabled: true,
+        }} />
+        <Stack.Screen name="profile/map" options={{
+          title: 'Seleccionar Ubicación',
+          gestureEnabled: true,
         }} />
       </Stack>
   )

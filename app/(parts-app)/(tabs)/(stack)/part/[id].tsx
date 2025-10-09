@@ -117,7 +117,18 @@ const PartScreen = () => {
         <View style={{marginTop: 4, marginBottom: 12}}>
           <Text style={styles.detailLabel}>Modelo: <Text style={styles.detailValue}>{part?.model}</Text></Text>
           <Text style={styles.detailLabel}>Garantía: <Text style={styles.detailValue}>{part?.warrantyMonths} meses</Text></Text>
-          <Text style={styles.detailLabel}>Stock: <Text style={styles.detailValue}>{part?.stock}</Text></Text>
+          <Text style={styles.detailLabel}>Stock: 
+            <Text style={[
+              styles.detailValue, 
+              part?.stock <= 0 ? styles.stockOut : 
+              part?.stock < 5 ? styles.stockLow : 
+              styles.stockGood
+            ]}>
+              {part?.stock <= 0 ? 'Sin stock' : 
+               part?.stock < 5 ? `Pocas unidades (${part?.stock})` : 
+               `${part?.stock} unidades`}
+            </Text>
+          </Text>
           <Text style={styles.detailLabel}>Categoría: <Text style={styles.detailValue}>{part?.category?.name}</Text></Text>
           <Text style={styles.detailLabel}>Descripción: <Text style={styles.detailValue}>{part?.description}</Text></Text>
         </View>
@@ -165,6 +176,7 @@ const PartScreen = () => {
             <AddToCartButton
               productId={part.id}
               quantity={quantity}
+              stock={part.stock}
               style={styles.cartButton}
               variant="outline"
               size="medium"
@@ -414,5 +426,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 8,
     marginBottom: 2,
+  },
+  stockOut: {
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  stockLow: {
+    color: '#F59E0B',
+    fontWeight: '600',
+  },
+  stockGood: {
+    color: '#10B981',
+    fontWeight: '500',
   },
 });

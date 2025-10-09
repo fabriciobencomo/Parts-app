@@ -6,6 +6,8 @@ export interface User {
     address: string;
     phoneNumber: string;
     direction: string;
+    latitude?: number;
+    longitude?: number;
     role: 'admin' | 'user';
     isActive: boolean;
     phoneVerified: boolean;

@@ -29,6 +29,15 @@ const PartCard = ({ part }: Props) => {
         <Text style={styles.price}>${(part.price || 0) % 1 === 0 ? (part.price || 0) : (part.price || 0).toFixed(2)}</Text>
         <Text style={styles.model}>{part.model}</Text>
         <Text style={styles.brand}>{part.brand?.name}</Text>
+        
+        {/* Stock Indicator */}
+        {part.stock <= 0 ? (
+          <Text style={styles.stockOut}>Sin stock</Text>
+        ) : part.stock < 5 ? (
+          <Text style={styles.stockLow}>Pocas unidades ({part.stock})</Text>
+        ) : (
+          <Text style={styles.stockGood}>Stock: {part.stock}</Text>
+        )}
       </View>
     </Pressable>
   )
@@ -102,5 +111,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
     fontWeight: '600',
+  },
+  stockOut: {
+    fontSize: 11,
+    color: '#EF4444',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  stockLow: {
+    fontSize: 11,
+    color: '#F59E0B',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  stockGood: {
+    fontSize: 11,
+    color: '#10B981',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 4,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
 });

@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 interface AddToCartButtonProps {
   productId: string;
   quantity?: number;
+  stock?: number; // Stock disponible del producto
   style?: ViewStyle;
   textStyle?: TextStyle;
   disabled?: boolean;
@@ -30,6 +31,7 @@ interface AddToCartButtonProps {
 const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
   quantity = 1,
+  stock = 0,
   style,
   textStyle,
   disabled = false,
@@ -75,6 +77,22 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   const sizeStyle = buttonSizes[size];
 
   const handleAddToCart = async () => {
+    // Validar stock antes de agregar
+    if (stock <= 0) {
+      Alert.alert('Sin Stock', 'Este producto no tiene stock disponible');
+      return;
+    }
+
+    // Validar que la cantidad no exceda el stock disponible
+    const totalQuantity = (cartQuantity || 0) + quantity;
+    if (totalQuantity > stock) {
+      Alert.alert(
+        'Stock Insuficiente', 
+        `Solo hay ${stock} unidades disponibles${isInCart ? ` (${cartQuantity} ya en el carrito)` : ''}`
+      );
+      return;
+    }
+
     try {
       setLocalLoading(true);
       clearError();
@@ -115,7 +133,8 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   const isButtonLoading = isLoading || localLoading;
-  const isButtonDisabled = disabled || isButtonLoading;
+  const isOutOfStock = stock <= 0;
+  const isButtonDisabled = disabled || isButtonLoading || isOutOfStock;
 
   const getButtonStyle = () => {
     const baseStyle = [
@@ -170,7 +189,11 @@ const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     return baseTextStyle;
   };
 
-  const buttonText = isInCart ? `${text} (${cartQuantity})` : text;
+  const buttonText = isOutOfStock 
+    ? 'Sin Stock' 
+    : isInCart 
+      ? `${text} (${cartQuantity})` 
+      : text;
 
   return (
     <TouchableOpacity

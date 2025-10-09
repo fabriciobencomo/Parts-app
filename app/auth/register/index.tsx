@@ -6,6 +6,7 @@ import ThemedButton from '@/presentation/shared/components/ThemedButton'
 import { Link, router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '@/presentation/store/useAuthStore'
+import VenezuelanPhoneInput from '@/presentation/shared/components/VenezuelanPhoneInput'
 
 const RegisterScreen = () => {
 
@@ -13,19 +14,12 @@ const RegisterScreen = () => {
   const textColor = useThemeColor({}, 'text')
   const {height, width} = useWindowDimensions();
 
-  // Form state
-  const [formData, setFormData] = useState({
-    fullName: '',
-    cedula: '',
-    phone: '',
-    email: '',
-    vehicleInfo: '',
-    password: ''
-  });
+  // State: only phone for first step
+  const [phone, setPhone] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const { register, status } = useAuthStore();
+  const [phoneError, setPhoneError] = useState('');
+  const { status, sendSMSCode } = useAuthStore();
 
      // Redirect to home if user is already authenticated
    useEffect(() => {
@@ -34,46 +28,79 @@ const RegisterScreen = () => {
      }
    }, [status])
 
-  const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const updatePhone = (value: string) => {
+    setPhone(value);
+    if (phoneError) setPhoneError('');
+  };
+
+  // Validar formato de teléfono venezolano
+  const validateVenezuelanPhone = (phone: string): boolean => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length !== 11 || !cleaned.startsWith('0')) {
+      return false;
+    }
+    
+    const validAreaCodes = [
+      '212', '424', '414', '426', '416', '251', '252', '253', '254', '255', 
+      '258', '259', '261', '262', '263', '264', '265', '266', '267', '268', 
+      '269', '271', '272', '273', '274', '275', '276', '277', '278', '281', 
+      '282', '283', '284', '285', '286', '287', '288', '291', '292', '293', 
+      '294', '295'
+    ];
+    
+    const areaCode = cleaned.slice(1, 4);
+    return validAreaCodes.includes(areaCode);
   };
 
   const handleContinue = async () => {
-    // Basic validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.password) {
-      Alert.alert('Error', 'Por favor completa todos los campos obligatorios');
-      return;
-    }
+    // Limpiar errores previos
+    setPhoneError('');
 
-    if (!formData.email.includes('@')) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+    // Aceptar 10 u 11 dígitos y formatear a 0XXX-XXX-XXXX para cumplir con backend actual
+    const digits = phone.replace(/\D/g, '');
+    if (!(digits.length === 10 || (digits.length === 11 && digits.startsWith('0')))) {
+      setPhoneError('Ingresa 10 u 11 dígitos');
+      Alert.alert('Error', 'Por favor ingresa un teléfono válido (10 u 11 dígitos)');
       return;
     }
-
-    if (formData.password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
+    const withZero = digits.length === 10 ? '0' + digits : digits;
+    const formattedPhone = `${withZero.slice(0,1)}${withZero.slice(1,4)}-${withZero.slice(4,7)}-${withZero.slice(7,11)}`;
 
     setIsLoading(true);
     
     try {
-      const success = await register({
-        ...formData,
-        password: formData.password
-      });
-
-              if (success) {
-          // Navigate directly to home and reset navigation stack
-          router.replace('/(parts-app)');
+      // Enviar código por SMS antes de proceder con el registro
+      const smsResult = await sendSMSCode(formattedPhone);
+      
+      if (smsResult.success) {
+        // Navegar a la página de verificación con el número de teléfono
+        router.push({
+          pathname: '/auth/verify-sms',
+          params: {
+            phone: formattedPhone,
+          }
+        });
+      } else {
+        // Manejar diferentes tipos de errores
+        const error = smsResult.error;
+        
+        if (error?.statusCode === 429) {
+          // Error de demasiados intentos
+          const seconds = error.message?.match(/(\d+) segundos?/)?.[1];
+          const minutes = seconds ? Math.ceil(parseInt(seconds) / 60) : 0;
+          
+          Alert.alert(
+            'Demasiados Intentos',
+            `Has enviado demasiados códigos SMS. Por favor espera ${minutes > 1 ? `${minutes} minutos` : 'un momento'} antes de intentar nuevamente.`,
+            [{ text: 'Entendido' }]
+          );
         } else {
-        Alert.alert('Error', 'No se pudo crear la cuenta. Intenta nuevamente.');
+          // Otros errores
+          Alert.alert('Error', error?.message || 'No se pudo enviar el código de verificación. Intenta nuevamente.');
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error inesperado');
+      Alert.alert('Error', 'Ocurrió un error al enviar el código de verificación');
     } finally {
       setIsLoading(false);
     }
@@ -81,8 +108,7 @@ const RegisterScreen = () => {
 
   return (
     <KeyboardAvoidingView behavior='padding' style={{ flex: 1 }}>
-      <ScrollView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
-        
+      <ScrollView style={[styles.container, { backgroundColor: '#FFFFFF' }]} keyboardShouldPersistTaps="handled">        
         {/* Header */}
         <View style={styles.header}>
           <ThemedText type='title' style={styles.title}>Regístrate.</ThemedText>
@@ -91,94 +117,12 @@ const RegisterScreen = () => {
 
         {/* Form */}
         <View style={styles.formContainer}>
-          
-          {/* Full Name Input */}
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Nombre y Apellido"
-                placeholderTextColor="#A0A0A0"
-                value={formData.fullName}
-                onChangeText={(value) => updateFormData('fullName', value)}
-                autoCapitalize="words"
-              />
-            </View>
-          </View>
-
-          {/* Cedula Input
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="card-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Cédula"
-                placeholderTextColor="#A0A0A0"
-                value={formData.cedula}
-                onChangeText={(value) => updateFormData('cedula', value)}
-                keyboardType="numeric"
-              />
-            </View>
-          </View> */}
-
-          {/* Phone Input */}
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="call-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Número de teléfono"
-                placeholderTextColor="#A0A0A0"
-                value={formData.phone}
-                onChangeText={(value) => updateFormData('phone', value)}
-                keyboardType="phone-pad"
-              />
-            </View>
-          </View>
-
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Correo"
-                placeholderTextColor="#A0A0A0"
-                value={formData.email}
-                onChangeText={(value) => updateFormData('email', value)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color="#4A90E2" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, { color: '#1F2937' }]}
-                placeholder="Contraseña"
-                placeholderTextColor="#A0A0A0"
-                value={formData.password}
-                onChangeText={(value) => updateFormData('password', value)}
-                secureTextEntry={!showPassword}
-                autoComplete="password"
-              />
-              <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                <Ionicons 
-                  name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                  size={20} 
-                  color="#A0A0A0" 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
+          <VenezuelanPhoneInput
+            value={phone}
+            onChangeText={updatePhone}
+            placeholder="Número de teléfono"
+            error={phoneError}
+          />
         </View>
 
         {/* Continue Button */}
@@ -189,7 +133,7 @@ const RegisterScreen = () => {
             disabled={isLoading}
           >
             <Text style={styles.continueButtonText}>
-              {isLoading ? 'Registrando...' : 'Continuar'}
+              {isLoading ? 'Enviando código...' : 'Enviar código'}
             </Text>
           </TouchableOpacity>
         </View>

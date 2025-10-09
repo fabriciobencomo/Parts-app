@@ -5,6 +5,7 @@ export interface CartItem {
   productId: string;
   quantity: number;
   price: number; // Precio al momento de agregar (histórico)
+  unitPrice: number; // Precio unitario actual
   createdAt: Date;
   updatedAt: Date;
   product?: Product; // Información completa del producto

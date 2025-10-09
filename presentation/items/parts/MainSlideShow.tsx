@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
-import { useWindowDimensions, View, StyleSheet } from 'react-native';
-import Carousel, { ICarouselInstance } from 'react-native-reanimated-carousel';
+import { useWindowDimensions, View, StyleSheet, ScrollView } from 'react-native';
 import PartBanner from './PartBanner';
 import { Offer } from '@/core/interfaces/banner.interface';
 
@@ -9,23 +8,34 @@ interface Props {
 }
 
 const MainSlideShow = ({ banners }: Props) => {
-  const ref = useRef<ICarouselInstance>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const width = useWindowDimensions().width;
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const index = Math.round(scrollPosition / width);
+    setActiveIndex(index);
+  };
+
   return (
     <View style={styles.container}>
-      <Carousel
-        ref={ref}
-        data={banners}
-        renderItem={({ item }) => <PartBanner image={item.imageUrl} />}
-        width={width}
-        pagingEnabled={true}
-        style={{ width: width, height: width / 2, justifyContent: 'center', alignItems: 'center', marginHorizontal: 10 }}
-        modeConfig={{}}
-        defaultIndex={0}
-        onSnapToItem={setActiveIndex}
-      />
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.scrollView}
+      >
+        {banners.map((item, index) => (
+          <View key={index} style={{ width }}>
+            <PartBanner image={item.imageUrl} />
+          </View>
+        ))}
+      </ScrollView>
+      
       {/* Pagination Dots */}
       <View style={styles.pagination}>
         {banners.map((_, idx) => (
@@ -44,6 +54,9 @@ export default MainSlideShow;
 const styles = StyleSheet.create({
   container: {
     width: '95%',
+  },
+  scrollView: {
+    height: 200, // Altura fija para el carrusel
   },
   pagination: {
     flexDirection: 'row',

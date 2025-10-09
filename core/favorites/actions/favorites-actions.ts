@@ -123,7 +123,30 @@ export const clearAllFavorites = async (): Promise<boolean> => {
   }
 };
 
-// Toggle favorite - agregar o remover según el estado actual
+// Toggle favorite - optimized version that tries to add first, then remove if conflict
+export const toggleFavoriteOptimized = async (productId: string, currentStatus: boolean): Promise<{ isFavorite: boolean; message: string }> => {
+  try {
+    if (currentStatus) {
+      // Currently favorited, remove it
+      await removeFromFavorites(productId);
+      return { 
+        isFavorite: false, 
+        message: 'Producto removido de favoritos' 
+      };
+    } else {
+      // Not currently favorited, add it
+      await addToFavorites(productId);
+      return { 
+        isFavorite: true, 
+        message: 'Producto agregado a favoritos' 
+      };
+    }
+  } catch (error: any) {
+    throw error;
+  }
+};
+
+// Legacy toggle favorite - kept for backward compatibility
 export const toggleFavorite = async (productId: string): Promise<{ isFavorite: boolean; message: string }> => {
   try {
     // Primero verificar si ya es favorito
