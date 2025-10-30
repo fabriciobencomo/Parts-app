@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/presentation/shared/components/ThemedText';
 import { useCartStore } from '@/presentation/store/useCartStore';
 import { useAuthStore } from '@/presentation/store/useAuthStore';
+import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
 
 const CheckoutScreen = () => {
   const { cart, total, itemCount, loading, createOrder, clearError } = useCartStore();
   const { user } = useAuthStore();
+  const { exchangeRate, convertToVES, formatVESAmount, isLoading: loadingRate, error: rateError } = useCurrencyConverter();
   
   const [orderData, setOrderData] = useState({
     paymentMethod: 'efectivo',
@@ -40,7 +42,7 @@ const CheckoutScreen = () => {
 
   const calculateTotals = () => {
     const subtotal = total;
-    const shipping = 2.5; // Precio fijo de envío
+    const shipping = 0; // Sin costo de envío para pruebas
     const discount = 0; // Por ahora sin descuentos
     const finalTotal = subtotal + shipping - discount;
     
@@ -63,6 +65,40 @@ const CheckoutScreen = () => {
 
     try {
       const totals = calculateTotals();
+      
+      // Si el método de pago es Pago Móvil, redirigir a la pantalla de validación
+      if (orderData.paymentMethod === 'pago_movil') {
+        router.push({
+          pathname: '/(parts-app)/(tabs)/(stack)/payment/pago-movil',
+          params: {
+            amount: totals.total.toString(),
+            orderData: JSON.stringify({
+              ...orderData,
+              ...totals,
+              status: 'pendiente',
+            }),
+          },
+        });
+        setSubmitting(false);
+        return;
+      }
+      
+      // Si el método de pago es Binance Pay, redirigir a la pantalla de pago
+      if (orderData.paymentMethod === 'binance_pay') {
+        router.push({
+          pathname: '/(parts-app)/(tabs)/(stack)/payment/binance',
+          params: {
+            amount: totals.total.toString(),
+            orderData: JSON.stringify({
+              ...orderData,
+              ...totals,
+              status: 'pendiente',
+            }),
+          },
+        });
+        setSubmitting(false);
+        return;
+      }
       
       const result = await createOrder({
         ...orderData,
@@ -196,25 +232,47 @@ const CheckoutScreen = () => {
         <ThemedText type="subtitle" style={styles.sectionTitle}>Método de pago</ThemedText>
         
         <View style={styles.paymentMethods}>
-          {['efectivo', 'tarjeta', 'transferencia'].map((method) => (
+          {[
+            { id: 'efectivo', label: 'Efectivo', icon: 'cash-outline' },
+            { id: 'tarjeta', label: 'Tarjeta', icon: 'card-outline' },
+            { id: 'transferencia', label: 'Transferencia', icon: 'swap-horizontal-outline' },
+            { id: 'pago_movil', label: 'Pago Móvil', icon: 'phone-portrait-outline' },
+            { id: 'binance_pay', label: 'Binance Pay', icon: 'logo-bitcoin' },
+          ].map((method) => (
             <TouchableOpacity
-              key={method}
+              key={method.id}
               style={[
                 styles.paymentMethod,
-                orderData.paymentMethod === method && styles.paymentMethodSelected
+                orderData.paymentMethod === method.id && styles.paymentMethodSelected
               ]}
-              onPress={() => updateField('paymentMethod', method)}
+              onPress={() => updateField('paymentMethod', method.id)}
             >
               <View style={[
                 styles.radio,
-                orderData.paymentMethod === method && styles.radioSelected
+                orderData.paymentMethod === method.id && styles.radioSelected
               ]} />
+              <Ionicons 
+                name={method.icon as any} 
+                size={20} 
+                color={orderData.paymentMethod === method.id ? '#1E3A8A' : '#6B7280'} 
+                style={{ marginRight: 8 }}
+              />
               <Text style={[
                 styles.paymentMethodText,
-                orderData.paymentMethod === method && styles.paymentMethodTextSelected
+                orderData.paymentMethod === method.id && styles.paymentMethodTextSelected
               ]}>
-                {method.charAt(0).toUpperCase() + method.slice(1)}
+                {method.label}
               </Text>
+              {method.id === 'binance_pay' && (
+                <View style={styles.cryptoBadge}>
+                  <Text style={styles.cryptoBadgeText}>Crypto</Text>
+                </View>
+              )}
+              {method.id === 'pago_movil' && (
+                <View style={styles.vesBadge}>
+                  <Text style={styles.vesBadgeText}>VES</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -243,6 +301,23 @@ const CheckoutScreen = () => {
             <Text style={styles.finalTotalLabel}>Total:</Text>
             <Text style={styles.finalTotalValue}>${(totals.total || 0).toFixed(2)}</Text>
           </View>
+          
+          {/* Mostrar conversión a VES si el método de pago es Pago Móvil */}
+          {orderData.paymentMethod === 'pago_movil' && exchangeRate && (
+            <View style={styles.vesConversionContainer}>
+              <View style={styles.vesConversionRow}>
+                <Text style={styles.vesLabel}>Equivalente en Bs.:</Text>
+                <Text style={styles.vesValue}>{formatVESAmount(convertToVES(totals.total))}</Text>
+              </View>
+              <Text style={styles.vesRate}>Tasa BCV: {exchangeRate.toFixed(2)} Bs/$</Text>
+              {loadingRate && (
+                <Text style={styles.vesLoading}>Actualizando tasa...</Text>
+              )}
+              {rateError && (
+                <Text style={styles.vesError}>Error al obtener tasa</Text>
+              )}
+            </View>
+          )}
         </View>
       </View>
 
@@ -464,5 +539,66 @@ const styles = StyleSheet.create({
   confirmButtonDisabled: {
     backgroundColor: '#9CA3AF',
     opacity: 0.7,
+  },
+  cryptoBadge: {
+    backgroundColor: '#F3BA2F',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 'auto',
+  },
+  cryptoBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  vesBadge: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 'auto',
+  },
+  vesBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  vesConversionContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  vesConversionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  vesLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  vesValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  vesRate: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  vesLoading: {
+    fontSize: 12,
+    color: '#F59E0B',
+    marginTop: 4,
+  },
+  vesError: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
   },
 });

@@ -9,6 +9,7 @@ import { Colors } from '../../../../../constants/Colors';
 import { getValidImages } from '@/helpers/image-utils';
 import FavoriteButton from '@/presentation/favorites/components/FavoriteButton';
 import AddToCartButton from '@/presentation/cart/components/AddToCartButton';
+import { useCurrencyConverter } from '@/hooks/useCurrencyConverter';
 
 const PartScreen = () => {
   const params = useLocalSearchParams();
@@ -43,6 +44,7 @@ const PartScreen = () => {
 
   const [quantity, setQuantity] = useState(1);
   const [modalVisible, setModalVisible] = useState(false);
+  const { exchangeRate, convertToVES, formatVESAmount, isLoading: loadingRate } = useCurrencyConverter();
 
   return (
     <View style={{flex: 1, backgroundColor: '#F4F4F4', paddingBottom: 32}}>
@@ -103,7 +105,14 @@ const PartScreen = () => {
         
         {/* Price and Brand Row */}
         <View style={styles.priceRow}>
-          <Text style={styles.price}>${part?.price}</Text>
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>${part?.price}</Text>
+            {exchangeRate && part?.price && (
+              <Text style={styles.priceVES}>
+                {formatVESAmount(convertToVES(part.price))}
+              </Text>
+            )}
+          </View>
           {/* Brand badge */}
           {part?.brand && (
             <View style={styles.brandBadge}>
@@ -287,11 +296,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  priceContainer: {
+    flexDirection: 'column',
+    marginRight: 16,
+  },
   price: {
     fontSize: 32,
     fontWeight: '700',
     color: '#001845',
-    marginRight: 16,
+  },
+  priceVES: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#10B981',
+    marginTop: 4,
   },
   brandBadge: {
     flexDirection: 'row',

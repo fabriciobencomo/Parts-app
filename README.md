@@ -1,6 +1,6 @@
-# Welcome to your Expo app 👋
+# Parts App - E-commerce con Múltiples Métodos de Pago 🛒
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación de e-commerce desarrollada con [Expo](https://expo.dev) y React Native que incluye integración con múltiples métodos de pago incluyendo Binance Pay, Pago Móvil BDV y conversión automática USD→VES.
 
 ## Get started
 
@@ -24,6 +24,38 @@ In the output, you'll find options to open the app in a
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## 💳 Métodos de Pago Integrados
+
+Esta aplicación incluye múltiples métodos de pago:
+
+- **Efectivo** 💵
+- **Tarjeta** 💳
+- **Transferencia** 🔄
+- **Pago Móvil BDV** 📱 - Con validación en tiempo real
+- **Binance Pay** ₿ - Pagos con criptomonedas
+
+### Documentación de Integraciones
+
+- **[Pago Móvil BDV](./BDV_PAGO_MOVIL_SETUP.md)** - API de Conciliación del Banco de Venezuela
+- **[Conversión USD→VES](./DOLAR_API_SETUP.md)** - Integración con DolarAPI para tasa BCV
+- **[Binance Pay](./BINANCE_PAY_SETUP.md)** - Pagos con criptomonedas
+- **[Notificaciones Telegram](./TELEGRAM_SETUP.md)** - Sistema de notificaciones
+
+## 🔧 Configuración
+
+1. Copia el archivo `.env.example` a `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Configura las variables de entorno necesarias:
+   - API del backend
+   - Credenciales de Binance Pay (opcional)
+   - API Key de BDV Pago Móvil
+   - Token de Telegram Bot (opcional)
+
+3. Instala las dependencias y ejecuta la app (ver sección "Get started" arriba)
 
 ## Get a fresh project
 
